@@ -1,0 +1,146 @@
+import { describe, expect, it } from 'vitest'
+import { groupIndex, mapFrame, mapServices, mapState, mergeMetrics, parsePublicNote, type NezhaFrame, type NezhaGroup } from '../src/adapters/nezha'
+import nezhaFrame from './fixtures/nezha-frame.json'
+import nezhaGroups from './fixtures/nezha-groups.json'
+
+describe('nezha adapter', () => {
+  it.each([
+    ['CNY 60.00', 60, 'CNY'],
+    ['USD 36.00', 36, 'USD'],
+    ['AUD 30.48', 30.48, 'AUD'],
+    ['EUR 19.98', 19.98, 'EUR'],
+  ])('reads canonical billing amount %s', (amount, price, currency) => {
+    expect(parsePublicNote(JSON.stringify({ billingDataMod: { amount, cycle: 'Year' } })))
+      .toMatchObject({ price, currency, billingCycle: 365 })
+  })
+
+  const groups = groupIndex(nezhaGroups.data as NezhaGroup[])
+  const event = mapFrame(nezhaFrame as NezhaFrame, groups)
+
+  it('maps servers and their groups from the socket frame', () => {
+    expect(event.nodes).toHaveLength(20)
+    expect(event.nodes.filter((n) => n.groups.length > 0).length).toBeGreaterThan(10)
+    expect(Object.keys(event.snapshots)).toHaveLength(20)
+  })
+
+  it('fills omitted zero values', () => {
+    const s = mapFrame({ now: 10_000, servers: [{ id: 1, name: 'a', last_active: new Date(9_000).toISOString() }] }, new Map())
+    expect(s.snapshots['1'].cpu).toBe(0)
+    expect(s.snapshots['1'].online).toBe(true)
+  })
+
+  it('marks servers silent for 30s as offline', () => {
+    const s = mapFrame({ now: 100_000, servers: [{ id: 1, name: 'a', last_active: new Date(60_000).toISOString() }] }, new Map())
+    expect(s.snapshots['1'].online).toBe(false)
+  })
+
+  it('remembers public_note after the first frame drops it', () => {
+    // Nezha only fills public_note in the first frame of a connection.
+    const note = JSON.stringify({ billingDataMod: { amount: '$36', cycle: 'Month' } })
+    const server = { id: 7, name: 'a', last_active: new Date().toISOString() }
+    const notes = new Map<string, string>()
+    const first = mapFrame({ now: Date.now(), servers: [{ ...server, public_note: note }] }, new Map(), notes)
+    const second = mapFrame({ now: Date.now(), servers: [server] }, new Map(), notes)
+    expect(first.nodes[0].price).toBe(36)
+    expect(second.nodes[0]).toMatchObject({ price: 36, billingCycle: 30 })
+  })
+
+  it('parses billing from public_note', () => {
+    const b = parsePublicNote(
+      JSON.stringify({
+        billingDataMod: { endDate: '2031-05-01T00:00:00+08:00', autoRenewal: '1', cycle: 'Year', amount: '$36' },
+        planDataMod: { trafficVol: '2TB', trafficType: '2' },
+      }),
+    )
+    expect(b).toMatchObject({ price: 36, currency: '$', billingCycle: 365, autoRenewal: true, trafficLimitType: 'sum' })
+    expect(b.trafficLimit).toBe(2 * 1024 ** 4)
+    expect(b.expiredAt).toBe(Date.parse('2031-05-01T00:00:00+08:00'))
+    expect(parsePublicNote('just a note').price).toBe(0)
+    expect(parsePublicNote('{"billingDataMod":{"amount":"0","endDate":"0000-00-00T23:59:59+08:00"}}')).toMatchObject({ price: -1, expiredAt: 0 })
+  })
+
+  it.each([
+    ['100TB/Month', 100 * 1024 ** 4, 30],
+    ['100GB/Month', 100 * 1024 ** 3, 30],
+    ['1.5TB/月', 1.5 * 1024 ** 4, 30],
+    ['600GB/Year', 600 * 1024 ** 3, 365],
+    ['2TiB', 2 * 1024 ** 4, 0],
+    ['Unlimited', 0, 0],
+    ['', -1, 0],
+    ['0GB', -1, 0],
+    ['1..5TB', -1, 0],
+    ['2TB/Fortnight', -1, 0],
+    ['10GB/Month/Year', -1, 0],
+  ])('reads traffic capacity and period from %s', (trafficVol, trafficLimit, trafficLimitPeriod) => {
+    expect(parsePublicNote(JSON.stringify({ planDataMod: { trafficVol } })))
+      .toMatchObject({ trafficLimit, trafficLimitPeriod })
+  })
+
+  it('reads plan details without treating missing IP flags as unsupported', () => {
+    const note = { planDataMod: { bandwidth: '50Mbps', IPv4: '1', IPv6: '0', networkRoute: '4837,CMI', extra: 'Home connection' } }
+    expect(parsePublicNote(JSON.stringify(note))).toMatchObject({ bandwidth: '50Mbps', ipv4: true, ipv6: false, networkRoute: '4837,CMI', note: 'Home connection' })
+    expect(parsePublicNote('{}').ipv6).toBeUndefined()
+  })
+
+  it('distinguishes pay-as-you-go, free, and unknown billing', () => {
+    expect(parsePublicNote('{"billingDataMod":{"amount":"-1"}}').price).toBe(-2)
+    expect(parsePublicNote('{"billingDataMod":{"amount":"0"}}').price).toBe(-1)
+    expect(parsePublicNote('{}')).toMatchObject({ price: 0, expiredAt: null, trafficLimit: -1 })
+  })
+
+  it('ignores malformed field types from public JSON', () => {
+    expect(parsePublicNote(JSON.stringify({ billingDataMod: { amount: {}, cycle: [], endDate: 123 }, planDataMod: { trafficVol: 123, IPv6: [] } })))
+      .toMatchObject({ price: 0, expiredAt: null, trafficLimit: -1, ipv6: undefined })
+  })
+})
+
+describe('nezha mapState last_active', () => {
+  const now = Date.parse('2026-09-16T08:00:00Z')
+
+  it('treats Go zero time as never seen, not 739,874 days ago', () => {
+    const s = mapState({ id: 1, name: 'x', last_active: '0001-01-01T00:00:00Z' } as never, now)
+    expect(s.online).toBe(false)
+    expect(s.at).toBe(0)
+  })
+
+  it('keeps a real report time', () => {
+    const s = mapState({ id: 1, name: 'x', last_active: '2026-09-16T07:59:50Z' } as never, now)
+    expect(s.online).toBe(true)
+    expect(s.at).toBe(Date.parse('2026-09-16T07:59:50Z'))
+  })
+})
+
+describe('nezha mapServices', () => {
+  it('keeps each probe target separate under current and older field names', () => {
+    const at = [1, 2]
+    const data = mapServices([
+      { monitor_id: 1, monitor_name: '广东联通', created_at: at, avg_delay: [5, 7] },
+      { monitor_id: 2, monitor_name: '广东移动', created_at: at, avg_delay: [4, 0] },
+      { service_id: 3, service_name: 'legacy', created_at: at, avg_delay: [9, 9] },
+    ])
+    expect(data.tasks.map((t) => [t.id, t.name, t.avg])).toEqual([[1, '广东联通', 6], [2, '广东移动', 4], [3, 'legacy', 9]])
+    expect(new Set(data.points.map((p) => p.task))).toEqual(new Set([1, 2, 3]))
+    expect(data.tasks.every((t) => t.loss === undefined)).toBe(true)
+    const recent = mapServices([{ monitor_id: 1, monitor_name: 'a', created_at: [1, 2, 3], avg_delay: [10, 4, 6] }], 2)
+    expect(recent.points.map((p) => p.at)).toEqual([2, 3])
+    expect(recent.tasks[0].avg).toBe(5)
+  })
+})
+
+describe('nezha mergeMetrics', () => {
+  it('joins TSDB series by timestamp, maps in/out to down/up and drops points before `since`', () => {
+    const pts = mergeMetrics(
+      {
+        cpu: { data_points: [{ ts: 1000, value: 9 }, { ts: 2000, value: 3 }, { ts: 3000, value: 4 }] },
+        net_out_speed: { data_points: [{ ts: 3000, value: 50 }, { ts: 2000, value: 40 }] },
+        net_in_speed: { data_points: [{ ts: 2000, value: 7 }] },
+        net_in_transfer: null as never,
+      },
+      2000,
+    )
+    expect(pts.map((p) => p.at)).toEqual([2000, 3000])
+    expect(pts[0]).toMatchObject({ cpu: 3, netUp: 40, netDown: 7 })
+    expect(pts[1]).toMatchObject({ cpu: 4, netUp: 50, netDown: 0 })
+    expect(pts[0].totalDown).toBeUndefined()
+  })
+})

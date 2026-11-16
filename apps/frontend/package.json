@@ -1,0 +1,39 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:demo": "vite --mode demo",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run && node scripts/check-i18n.mjs",
+    "test:unit": "vitest run",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:size": "node scripts/check-size.mjs",
+    "package": "pnpm build && pnpm check:size && node scripts/package.mjs",
+    "icons:os": "node scripts/import-os-icons.mjs",
+    "icons:flags": "node scripts/import-flag-icons.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.46.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-i18next": "^17.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "simple-icons": "16.31.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}

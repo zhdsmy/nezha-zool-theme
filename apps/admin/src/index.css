@@ -1,0 +1,449 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --font-sans:
+        "Inter Variable", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --color-good: var(--good);
+    --color-warn: var(--warn);
+
+    --text-xsm: 0.825rem;
+    --text-xsm--line-height: 1.25rem;
+}
+
+/* ZOOL palette (zool-theme src/styles/app.css) */
+:root {
+    --radius: 0.625rem;
+    --background: #f3f5f8;
+    --foreground: #0d1526;
+    --card: #ffffff;
+    --card-foreground: #0d1526;
+    --popover: #ffffff;
+    --popover-foreground: #0d1526;
+    --primary: #1849c6;
+    --primary-foreground: #ffffff;
+    --secondary: #e5ebf3;
+    --secondary-foreground: #0d1526;
+    --muted: #e8edf4;
+    --muted-foreground: #45546a;
+    --accent: #e3ecff;
+    --accent-foreground: #1643b8;
+    --destructive: #bf1b30;
+    --destructive-foreground: #ffffff;
+    --border: #d4dce8;
+    --input: #b5c2d4;
+    --ring: #1849c6;
+    --good: #0a7246;
+    --warn: #8f4b00;
+    --chart-1: #1849c6;
+    --chart-2: #0b877d;
+    --chart-3: #c86400;
+    --chart-4: #8e2de2;
+    --chart-5: #d6336c;
+}
+
+.dark {
+    --background: #0a0f1a;
+    --foreground: #f0f4fa;
+    --card: #111827;
+    --card-foreground: #f0f4fa;
+    --popover: #111827;
+    --popover-foreground: #f0f4fa;
+    --primary: #4e86f7;
+    --primary-foreground: #070e1b;
+    --secondary: #1a263b;
+    --secondary-foreground: #f0f4fa;
+    --muted: #172133;
+    --muted-foreground: #97a8c2;
+    --accent: #142442;
+    --accent-foreground: #78a6ff;
+    --destructive: #c81e3a;
+    --destructive-foreground: #ffffff;
+    --border: #23314a;
+    --input: #354868;
+    --ring: #4e86f7;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --chart-1: #5b92ff;
+    --chart-2: #2dd4bf;
+    --chart-3: #fbbf24;
+    --chart-4: #e879f9;
+    --chart-5: #f472b6;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+        font-synthesis: none;
+    }
+    .dark {
+        color-scheme: dark;
+    }
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+::-webkit-scrollbar {
+    @apply h-2.5 w-2.5;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full border-[1px] border-solid border-transparent bg-clip-padding;
+}
+
+.terminal-shell {
+    --terminal-available-height: 70vh;
+    display: flex;
+    height: min(70vh, var(--terminal-available-height));
+    min-height: 360px;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #09090b;
+}
+
+.terminal-screen {
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 6px 3px 2px 6px;
+    touch-action: pan-y;
+}
+
+.terminal-screen .xterm {
+    height: 100%;
+}
+
+.terminal-screen .xterm-viewport {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.terminal-keyboard {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--background);
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+}
+
+.terminal-key {
+    display: inline-flex;
+    min-width: 46px;
+    height: 42px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: var(--secondary);
+    padding: 0 9px;
+    color: var(--secondary-foreground);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.terminal-key:hover:not(:disabled),
+.terminal-key:focus-visible,
+.terminal-key.is-active {
+    border-color: var(--ring);
+    background: var(--accent);
+    outline: none;
+}
+
+.terminal-key:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.terminal-key-arrow {
+    min-width: 40px;
+    padding-inline: 5px;
+}
+
+.terminal-key-paste {
+    min-width: 58px;
+}
+
+.terminal-shell:fullscreen {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+@media (max-width: 640px) {
+    .terminal-shell {
+        height: var(--terminal-available-height);
+        min-height: 220px;
+    }
+
+    .terminal-keyboard {
+        gap: 2px;
+        padding-inline: 4px;
+    }
+
+    .terminal-key {
+        min-width: 43px;
+        height: 44px;
+        padding-inline: 5px;
+    }
+
+    .terminal-key-arrow {
+        min-width: 36px;
+        padding-inline: 2px;
+    }
+
+    .terminal-key-paste {
+        min-width: 49px;
+    }
+}
+
+/* Admin lists: the select column and the key column stay at the left edge,
+   actions stay at the right edge, so a wide table scrolls only its middle. */
+.zool-table th {
+    white-space: nowrap;
+}
+.zool-table :is(th, td)[data-col="select"] {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 2.5rem;
+    min-width: 2.5rem;
+    background: var(--card);
+}
+.zool-table :is(th, td):is([data-col="name"], [data-col="username"], [data-col="ip"]) {
+    position: sticky;
+    left: 2.5rem;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: inset -1px 0 var(--border);
+}
+.zool-table :is(th, td)[data-col="actions"] {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    width: 1%;
+    background: var(--card);
+    box-shadow: inset 1px 0 var(--border);
+}
+.zool-table tbody tr:hover > td {
+    background: color-mix(in srgb, var(--muted) 55%, var(--card));
+}
+.zool-table tbody tr[data-state="selected"] > td {
+    background: var(--accent);
+}
+
+/* Narrow screens: rows become cards with the key column and actions; tap a card to show the other columns. */
+@media (width < 640px) {
+    .zool-table {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+    }
+    /* card rows: borderless row actions, so each card is not a row of boxes */
+    .zool-table td[data-col="actions"] button {
+        border-color: transparent;
+        background: transparent;
+    }
+    .zool-table table,
+    .zool-table tbody {
+        display: block;
+    }
+    .zool-table thead {
+        display: none;
+    }
+    .zool-table tbody tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 0.625rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0.625rem 0.5rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        cursor: pointer;
+    }
+    .zool-table tbody tr[data-state="selected"] {
+        border-color: var(--ring);
+        background: var(--accent);
+    }
+    .zool-table tbody td {
+        display: none;
+        position: static !important;
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .zool-table tbody :is(td[data-col="select"], td[data-col="actions"]) {
+        display: block;
+    }
+    .zool-table tbody td[data-col="actions"] button {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+    .zool-table tbody td[data-col="actions"] > div {
+        gap: 0.375rem;
+    }
+    /* the key column; tables without name/username/ip use their second column */
+    .zool-table tbody :is(td[data-col="name"], td[data-col="username"], td[data-col="ip"]),
+    .zool-table
+        tbody
+        tr:not(:has(> :is([data-col="name"], [data-col="username"], [data-col="ip"])))
+        > td[data-col]:nth-child(2) {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+    .zool-table tbody :is(td[data-col="name"], td[data-col="username"], td[data-col="ip"])::after,
+    .zool-table
+        tbody
+        tr:not(:has(> :is([data-col="name"], [data-col="username"], [data-col="ip"])))
+        > td[data-col]:nth-child(2)::after {
+        content: "";
+        flex: none;
+        width: 0.4rem;
+        height: 0.4rem;
+        margin-left: auto;
+        border-right: 1.5px solid var(--muted-foreground);
+        border-bottom: 1.5px solid var(--muted-foreground);
+        transform: rotate(45deg);
+        transition: transform 0.15s;
+    }
+    .zool-table
+        tbody
+        tr[data-open]
+        > :is(td[data-col="name"], td[data-col="username"], td[data-col="ip"])::after,
+    .zool-table
+        tbody
+        tr[data-open]:not(:has(> :is([data-col="name"], [data-col="username"], [data-col="ip"])))
+        > td[data-col]:nth-child(2)::after {
+        transform: rotate(225deg);
+    }
+    /* expanded details, and every cell of untagged tables / loading rows */
+    .zool-table tbody tr[data-open] > td[data-col],
+    .zool-table tbody td:not([data-col]) {
+        display: flex;
+        grid-column: 1 / -1;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        min-height: 1.75rem;
+        text-align: right;
+    }
+    .zool-table tbody tr[data-open] > td[data-col] {
+        padding-top: 0.25rem !important;
+        border-top: 1px solid var(--border);
+    }
+    .zool-table tbody tr[data-open] > td[data-col][data-label]::before,
+    .zool-table tbody td:not([data-col])[data-label]::before {
+        content: attr(data-label);
+        flex: none;
+        color: var(--muted-foreground);
+        text-align: left;
+    }
+    .zool-table tbody td > * {
+        max-width: none;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .zool-table
+        tbody
+        tr[data-open]
+        > td[data-col]:not([data-col="select"], [data-col="actions"])
+        button {
+        width: 2rem;
+        height: 2rem;
+    }
+    /* keep the summary row (select, key, actions) on top when expanded */
+    .zool-table.zool-table
+        tbody
+        tr[data-open]
+        > :is(
+            td[data-col="select"],
+            td[data-col="actions"],
+            td[data-col="name"],
+            td[data-col="username"],
+            td[data-col="ip"]
+        ) {
+        display: flex;
+        grid-column: auto;
+        grid-row: 1;
+        min-height: 0;
+        margin: 0;
+        padding: 0 !important;
+        border: 0;
+        text-align: left;
+    }
+    .zool-table.zool-table
+        tbody
+        tr[data-open]
+        > :is(
+            td[data-col="select"],
+            td[data-col="actions"],
+            td[data-col="name"],
+            td[data-col="username"],
+            td[data-col="ip"]
+        )::before {
+        content: none;
+    }
+}
