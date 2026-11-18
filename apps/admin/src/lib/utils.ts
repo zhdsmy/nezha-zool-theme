@@ -156,15 +156,5 @@ export function joinIP(p?: ModelIP) {
 }
 
 export async function copyToClipboard(text: string) {
-    try {
-        return await navigator.clipboard.writeText(text)
-    } catch (error) {
-        console.error("navigator", error)
-    }
-    try {
-        return copy(text)
-    } catch (error) {
-        console.error("copy", error)
-    }
-    throw new Error("Failed to copy text to clipboard")
+    if (!(await copy(text))) throw new Error("Failed to copy text to clipboard")
 }

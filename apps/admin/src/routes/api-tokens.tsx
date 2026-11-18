@@ -331,8 +331,12 @@ function RevealedTokenDialog({
                             variant="secondary"
                             size="sm"
                             onClick={async () => {
-                                await navigator.clipboard.writeText(token.token)
-                                toast(t("Copied"))
+                                try {
+                                    await navigator.clipboard.writeText(token.token)
+                                    toast(t("Copied"))
+                                } catch {
+                                    toast(t("ClipboardWriteFailed"))
+                                }
                             }}
                         >
                             {t("Copy")}

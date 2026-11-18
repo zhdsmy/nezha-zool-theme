@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { ButtonProps } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -5,10 +6,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { copyToClipboard } from "@/lib/utils"
-import { forwardRef, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
+import { useClipboard } from "@/hooks/useClipboard"
+import { forwardRef } from "react"
 
 import { IconButton } from "./xui/icon-button"
 
@@ -18,25 +17,7 @@ interface NoteMenuProps extends ButtonProps {
 
 export const NoteMenu = forwardRef<HTMLButtonElement, NoteMenuProps>((props, ref) => {
     const { t } = useTranslation()
-    const [copy, setCopy] = useState(false)
-
-    const switchState = async (text?: string) => {
-        if (!text) {
-            toast("Warning", {
-                description: t("EmptyNote"),
-            })
-            return
-        }
-
-        if (!copy) {
-            setCopy(true)
-            await copyToClipboard(text)
-            setTimeout(() => {
-                setCopy(false)
-            }, 2 * 1000)
-        }
-    }
-
+    const { copied, copyText } = useClipboard()
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -45,20 +26,20 @@ export const NoteMenu = forwardRef<HTMLButtonElement, NoteMenuProps>((props, ref
                     ref={ref}
                     variant="outline"
                     size="icon"
-                    icon={copy ? "check" : "clipboard"}
+                    icon={copied ? "check" : "clipboard"}
                 />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuItem
                     onClick={() => {
-                        switchState(props.note.private)
+                        copyText(props.note.private, "EmptyNote")
                     }}
                 >
                     {t("Private")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => {
-                        switchState(props.note.public)
+                        copyText(props.note.public, "EmptyNote")
                     }}
                 >
                     {t("Public")}
