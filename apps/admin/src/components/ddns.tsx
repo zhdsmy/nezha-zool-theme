@@ -51,7 +51,7 @@ interface DDNSCardProps {
     mutate: KeyedMutator<ModelDDNSProfile[]>
 }
 
-const ddnsFormSchema = z.object({
+const providerSchema = z.object({
     max_retries: z.coerce.number().int().min(1),
     enable_ipv4: asOptionalField(z.boolean()),
     enable_ipv6: asOptionalField(z.boolean()),
@@ -61,6 +61,9 @@ const ddnsFormSchema = z.object({
     domains_raw: z.string(),
     access_id: asOptionalField(z.string()),
     access_secret: asOptionalField(z.string()),
+})
+
+const ddnsFormSchema = providerSchema.extend({
     webhook_url: asOptionalField(z.string().url()),
     webhook_method: asOptionalField(z.coerce.number().int().min(1).max(255)),
     webhook_request_type: asOptionalField(z.coerce.number().int().min(1).max(255)),
@@ -74,7 +77,9 @@ type DDNSFormData = z.output<typeof ddnsFormSchema>
 export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) => {
     const { t } = useTranslation()
     const form = useForm<DDNSFormInput, unknown, DDNSFormData>({
-        resolver: zodResolver(ddnsFormSchema),
+        resolver: (values, context, options) => zodResolver(
+            values.provider === "webhook" ? ddnsFormSchema : providerSchema,
+        )(values, context, options),
         defaultValues: data
             ? {
                   max_retries: data.max_retries ?? 3,
@@ -120,7 +125,14 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
         try {
             values.domains = conv.strToArr(values.domains_raw)
             if (data?.id) {
-                await updateDDNSProfile(data.id, values)
+                await updateDDNSProfile(data.id, {
+                    webhook_url: data.webhook_url,
+                    webhook_method: data.webhook_method,
+                    webhook_request_type: data.webhook_request_type,
+                    webhook_headers: data.webhook_headers,
+                    webhook_request_body: data.webhook_request_body,
+                    ...values,
+                })
             } else {
                 await createDDNSProfile(values)
             }
@@ -252,6 +264,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         )
                                     }}
                                 />
+                                {form.watch("provider") === "webhook" && (<>
                                 <FormField
                                     control={form.control}
                                     name="webhook_url"
@@ -358,6 +371,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         </FormItem>
                                     )}
                                 />
+                                </>)}
                                 <FormField
                                     control={form.control}
                                     name="enable_ipv4"
