@@ -109,7 +109,7 @@ const serverFormSchema = z.object({
 
 export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
-    data = { ...data, ddns_profiles: data.ddns_profiles ?? [] }
+    data = { ...data, ddns_profiles: data.ddns_profiles ?? [], override_ddns_domains: data.override_ddns_domains ?? {} }
     const form = useForm({
         resolver: zodResolver(serverFormSchema) as any,
         defaultValues: {

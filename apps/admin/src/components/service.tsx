@@ -83,6 +83,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
         defaultValues: data
             ? {
                   ...data,
+                  skip_servers: data.skip_servers ?? {},
                   fail_trigger_tasks: data.fail_trigger_tasks ?? [],
                   recover_trigger_tasks: data.recover_trigger_tasks ?? [],
                   fail_trigger_tasks_raw: conv.arrToStr(data.fail_trigger_tasks),

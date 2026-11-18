@@ -100,6 +100,13 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
     type AlertRuleFormInput = z.input<typeof alertRuleFormSchema>
     type AlertRuleFormData = z.output<typeof alertRuleFormSchema>
 
+    if (data && Array.isArray(data.rules)) {
+        data = { ...data, rules: data.rules.map(rule => ({
+            ...rule,
+            ignore: rule.ignore ?? {},
+            next_transfer_at: ("next_transfer_at" in rule && rule.next_transfer_at != null) ? rule.next_transfer_at : {},
+        })) }
+    }
     const form = useForm<AlertRuleFormInput, unknown, AlertRuleFormData>({
         resolver: zodResolver(alertRuleFormSchema),
         defaultValues: data

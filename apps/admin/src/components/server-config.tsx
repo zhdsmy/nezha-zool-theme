@@ -117,7 +117,8 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
         const fetchData = async () => {
             try {
                 const result = await getServerConfig(sid)
-                setData(JSON.parse(result))
+                const config = JSON.parse(result)
+                setData({ ...config, nic_allowlist: config.nic_allowlist ?? {} })
             } catch (error) {
                 console.error(error)
                 toast(t("Error"), {
