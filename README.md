@@ -178,26 +178,31 @@ All screenshots below are rendered at `2×` Retina resolution using synthetic fl
 
 ## Deployment & Installation
 
-### 1. Build Static Bundles
+### Install with Nezha v2.6+
 
-Requires **Node.js 22+** and **pnpm 10/12+**:
+1. Open **Settings → Frontends** and select **User frontend**. Enter `https://github.com/zhdsmy/nezha-zool-theme` and choose **Read releases**.
+2. Install the desired tag and select **Activate**. Open `/` to verify the public status page.
+3. Select **Admin frontend** and enter `https://github.com/zhdsmy/nezha-zool-admin`. Install and activate the same tag, then open `/dashboard/`.
+
+Each repository supplies the installer's `dist.zip` with its entry point at `dist/index.html`. To switch back, activate the previous version or the built-in frontend for the same target.
+
+### Build and release
+
+The release workflow uses Node.js 26.13.1, pnpm 12.21.0 and Python 3.
 
 ```bash
 git clone https://github.com/zhdsmy/nezha-zool-theme.git
 cd nezha-zool-theme
-pnpm install
-
-# Build both apps/frontend/dist and apps/admin/dist
-pnpm build
-
-# Optional: package frontend into release/nezha-zool-frontend-v0.1.0.zip (+ .sha256)
-pnpm --filter frontend package
+pnpm install --frozen-lockfile
+pnpm test:release
+pnpm package
 ```
 
-- `apps/frontend/dist` → mount to `/dashboard/user-dist` (or copy `apps/frontend/public/config.js` alongside `index.html` on first install).
-- `apps/admin/dist` → mount to `/dashboard/admin-dist`.
+For a version tag such as `v0.1.0`, the theme workflow runs checks and publishes `release/dist.zip` (user), `release/nezha-zool-admin-dist.zip` (admin) and their `.sha256` files. Release notes come from the matching section of `CHANGELOG.md`. Once the theme release is public, push the same tag in the admin repository. Its workflow verifies the admin ZIP and republishes it as `dist.zip`. See the [maintainer instructions](deploy/admin-repo/MAINTAINERS.md).
 
-### 2. Mount in Nezha Docker Compose
+### Manual Docker Compose installation
+
+Verify each downloaded ZIP with its matching checksum (for example, `sha256sum -c dist.zip.sha256`). Copy the **contents** of the extracted `dist/` into the host's `user-dist/` or `admin-dist/` directory shown below. The ZIPs exclude `config.js`. For custom public settings on a first install, copy `apps/frontend/public/config.js` alongside the public `index.html`.
 
 ```yaml
 services:
@@ -215,7 +220,7 @@ services:
 Ensure `data/config.yaml` points `user_template` and `admin_template` to `user-dist` and `admin-dist` (the Nezha defaults), or register them as custom template folders if you keep multiple themes installed.
 
 > **Upgrade Tips**
-> 1. **Preserve `config.js`**: `pnpm --filter frontend package` intentionally omits `config.js` from the release ZIP so upgrading never clobbers your live settings. Copy `apps/frontend/public/config.js` once on initial setup.
+> 1. **Preserve `config.js`**: Keep the existing file when updating a manual installation.
 > 2. **Avoid cached-tab `404`s**: Copy new frontend builds *over* the existing `user-dist/` directory without immediately deleting older hashed files in `assets/` so visitors with an open tab can still lazy-load chunks cleanly.
 > 3. **Keep `admin-dist` aligned with Nezha**: `apps/admin` calls Nezha's authenticated `/api/v1/*` management endpoints directly. When upgrading the Nezha backend across minor/major schema changes, rebuild `apps/admin` against the matching Swagger schema (`npx swagger-typescript-api -p http://localhost:8008/swagger/doc.json -o ./src/types -n api.ts --no-client --union-enums`).
 

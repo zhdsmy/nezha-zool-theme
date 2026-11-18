@@ -13,8 +13,8 @@ pnpm --filter frontend package
 For local live data, add `ZOOL_UPSTREAM=https://your-monitor.example` to
 `apps/frontend/.env.local`. Without `ZOOL_UPSTREAM`, `dev` uses the built-in synthetic demo dataset.
 
-Packaging writes `release/nezha-zool-frontend-v0.1.0.zip` and its SHA256 file.
-The ZIP contains one folder, `zool-dist/`, matching the Nezha folder layout.
+Packaging writes `release/dist.zip` and `release/dist.zip.sha256`.
+The ZIP contains one folder, `dist/`, with the installer entry point at `dist/index.html`.
 Mount its contents over `/dashboard/user-dist` (or the active `user_template` in `data/config.yaml`).
 
 `config.js` belongs to the site owner and is excluded from the ZIP. On the first
@@ -25,4 +25,4 @@ installation, copy `apps/frontend/public/config.js` next to the extracted
 
 - **Billing**: Reads `billingDataMod` and `planDataMod` JSON from each server's public note (`Month` / `Quarter` / `Half` / `Year`, currency prefix or symbol, and traffic cap). Plain-text notes are ignored.
 - **History & latency**: Live metric buffers fill while the page is open, and TSDB history up to 30 days is loaded when available. Service monitor latency supports spike filtering and range selection.
-- **Upgrades**: Copy new files over the existing `zool-dist/` directory without deleting old hashed `assets/` immediately so open tabs with cached HTML do not hit `404`s.
+- **Manual upgrades**: Copy the contents of `dist/` over the active frontend directory. Keep old hashed `assets/` temporarily so open tabs can still load them.

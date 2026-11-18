@@ -1,0 +1,34 @@
+name: Release admin frontend
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify the admin ZIP from the matching theme release
+        env:
+          GH_REPO: zhdsmy/nezha-zool-theme
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset=nezha-zool-admin-dist.zip
+          gh release download "$RELEASE_TAG" --pattern "$asset" --pattern "$asset.sha256"
+          sha256sum "$asset" | cmp - "$asset.sha256"
+          mv "$asset" dist.zip
+          sha256sum dist.zip > dist.zip.sha256
+          gh release view "$RELEASE_TAG" --json body | jq -er '.body | select(length > 0)' > notes.md
+      - name: Publish the verified installer asset
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG"
+          --notes-file notes.md dist.zip dist.zip.sha256

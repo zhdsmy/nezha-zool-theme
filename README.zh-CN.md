@@ -178,26 +178,31 @@
 
 ## 部署与安装指南
 
-### 1. 本地构建静态产物
+### 用 Nezha v2.6+ 前端管理器安装
 
-环境要求：**Node.js 22+** 与 **pnpm 10/12+**。
+1. 打开「设置 → 前端管理」，选择「用户前端」。填写 `https://github.com/zhdsmy/nezha-zool-theme`，点击「读取发布版本」。
+2. 安装所需版本，点击「启用」。打开 `/` 检查公开状态页。
+3. 选择「管理后台前端」，填写 `https://github.com/zhdsmy/nezha-zool-admin`。安装并启用同名版本，打开 `/dashboard/` 检查后台。
+
+两个仓库分别提供安装器识别的 `dist.zip`，包内入口均为 `dist/index.html`。需要回滚时，在对应的前端类型下启用旧版本或内置前端。
+
+### 本地构建与发布
+
+发布工作流使用 Node.js 26.13.1、pnpm 12.21.0 和 Python 3。
 
 ```bash
 git clone https://github.com/zhdsmy/nezha-zool-theme.git
 cd nezha-zool-theme
-pnpm install
-
-# 同时构建 apps/frontend/dist 与 apps/admin/dist
-pnpm build
-
-# 可选：打包前台发布归档 release/nezha-zool-frontend-v0.1.0.zip（含 .sha256 校验文件）
-pnpm --filter frontend package
+pnpm install --frozen-lockfile
+pnpm test:release
+pnpm package
 ```
 
-- `apps/frontend/dist` → 对应哪吒面板容器内的 `/dashboard/user-dist`（首次安装请将 `apps/frontend/public/config.js` 一并复制到 `index.html` 同级目录）。
-- `apps/admin/dist` → 对应哪吒面板容器内的 `/dashboard/admin-dist`。
+主题仓库收到版本标签（如 `v0.1.0`）后，工作流先运行检查，再发布前台包 `release/dist.zip`、后台包 `release/nezha-zool-admin-dist.zip` 和各自的 `.sha256`。发布说明取自 `CHANGELOG.md` 的对应版本。主题版本公开后，在后台仓库推送同名标签。后台工作流校验后台包，以 `dist.zip` 的名称发布。完整步骤见[维护指南](deploy/admin-repo/MAINTAINERS.md)。
 
-### 2. Docker Compose 挂载示例
+### 手工安装与 Docker Compose 挂载
+
+用对应的校验文件验证每个 ZIP，例如 `sha256sum -c dist.zip.sha256`。将解压后 `dist/` **里面的文件**复制到下方宿主机的 `user-dist/` 或 `admin-dist/` 目录。两个 ZIP 均排除 `config.js`。首次手工安装需要自定义前台时，将 `apps/frontend/public/config.js` 复制到前台 `index.html` 旁。
 
 ```yaml
 services:
@@ -215,7 +220,7 @@ services:
 请确保 `data/config.yaml` 中的 `user_template` 与 `admin_template` 指向 `user-dist` 与 `admin-dist`（哪吒默认值），或者挂载为独立主题目录后在后台「系统设置」中切换启用。
 
 > **平滑升级建议**
-> 1. **保留 `config.js`**：`pnpm --filter frontend package` 生成的 ZIP 不包含 `config.js`，覆盖升级时不会重置你的自定义项。
+> 1. **保留 `config.js`**：手工升级时保留站点现有的配置文件。
 > 2. **避免旧标签页 `404`**：更新前台静态文件时建议直接增量覆盖 `user-dist/`，暂缓清理旧的哈希静态资源 `assets/`，以免仍停留在旧页面的访客懒加载分包时遇到 `404`。
 > 3. **后台版本同步**：`apps/admin` 直接对接哪吒 `/api/v1/*` 管理接口。升级哪吒后端大/小版本时，若接口字段变动，请同步更新类型定义并重新构建 `apps/admin`。
 
