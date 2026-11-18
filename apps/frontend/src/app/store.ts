@@ -56,6 +56,8 @@ function set(patch: Partial<State>) {
 }
 
 export const getState = () => state
+export const connectionLabel = ({ connection, fed }: Pick<State, 'connection' | 'fed'>) =>
+  !fed ? 'status.connecting' : connection === 'open' ? 'status.live' : 'status.reconnecting'
 
 export function setExchangeRates(exchangeRates: ExchangeRates | null, exchangeRateError = false) {
   set({ exchangeRates, exchangeRateError })

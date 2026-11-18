@@ -169,3 +169,9 @@ it('publishes changed billing metadata for the same node', async () => {
     expect(getState().nodes[0].price).toBe(price)
   }
 })
+
+it('keeps the reconnect label throughout a retry after a valid frame', async () => {
+  const { connectionLabel } = await import('../src/app/store')
+  expect(connectionLabel({ connection: 'connecting', fed: true })).toBe('status.reconnecting')
+  expect(connectionLabel({ connection: 'connecting', fed: false })).toBe('status.connecting')
+})

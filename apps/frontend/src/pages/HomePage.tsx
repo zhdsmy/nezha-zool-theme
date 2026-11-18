@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowDownUp, Check, ChevronDown, LayoutGrid, List, ListTree, Rows2, Rows3 } from 'lucide-react'
-import { adapter, getSpark, useStore, useVisibleNodes } from '@/app/store'
+import { adapter, connectionLabel, getSpark, useStore, useVisibleNodes } from '@/app/store'
 import { setDensity, setGrouping, setView, useDensity, useGrouping, useView } from '@/app/prefs'
 import type { Density, View } from '@/core/settings'
 import type { HistoryPoint, NodeInfo, Snapshot } from '@/core/model'
@@ -408,7 +408,7 @@ export function HomePage() {
           {/* Until the first frame the dot is neutral whatever the socket is doing: red belongs to a
               connection that was working and dropped. */}
           <StatusDot online={connection === 'open' && fed} pending={!fed} />
-          {connection === 'closed' && fed ? t('status.reconnecting') : connection === 'open' && fed ? t('status.live') : t('status.connecting')}
+          {t(connectionLabel({ connection, fed }))}
           {nodes.length === 0 && (
             <>
               <span className="text-faint">/</span>
