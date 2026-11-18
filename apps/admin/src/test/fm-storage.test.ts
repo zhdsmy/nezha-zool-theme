@@ -32,6 +32,7 @@ test("R2-ADM-01: download cleanup preserves unrelated OPFS files and directories
     await root.getFileHandle("other-app.txt")
     await root.getDirectoryHandle("other-app-data")
     vi.stubGlobal("navigator", { storage: { getDirectory: async () => root } })
+    vi.stubGlobal("self", { close: vi.fn() })
     vi.stubGlobal("onmessage", null)
     vi.stubGlobal("postMessage", vi.fn())
     await import("../lib/fm")

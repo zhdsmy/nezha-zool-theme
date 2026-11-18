@@ -4,8 +4,6 @@ import copy from "copy-to-clipboard"
 import { twMerge } from "tailwind-merge"
 import { z } from "zod"
 
-import FMWorker from "./fm?worker"
-
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
@@ -127,8 +125,6 @@ export const fm = {
         })
     },
 }
-
-export const fmWorker = new FMWorker()
 
 export function formatPath(path: string) {
     return path.replace(/\/{2,}/g, "/")

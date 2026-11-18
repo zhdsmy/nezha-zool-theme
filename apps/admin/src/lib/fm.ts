@@ -11,7 +11,14 @@ enum Operation {
     DeleteFiles,
 }
 
-onmessage = async function (event) {
+// Header creation is asynchronous. Process chunks and cleanup in socket order.
+let pending = Promise.resolve()
+onmessage = (event) => {
+    pending = pending.then(() => processMessage(event))
+    return pending
+}
+
+async function processMessage(event: MessageEvent) {
     try {
         const { operation, arrayBuffer, fileName } = event.data
 
@@ -62,9 +69,12 @@ onmessage = async function (event) {
             case Operation.DeleteFiles: {
                 accessHandle?.close()
                 accessHandle = undefined
-                if (!downloads) break
-                await downloads.removeEntry(draftName)
-                downloads = undefined
+                try {
+                    await downloads?.removeEntry(draftName)
+                } finally {
+                    downloads = undefined
+                    self.close()
+                }
                 break
             }
         }
