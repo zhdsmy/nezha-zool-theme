@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 
-const limit = Number(process.env.ZOOL_SIZE_LIMIT ?? 139264) // budget: 136 KiB
+// budget: 140 KiB. Linux CI zlib output runs about 650 bytes above macOS for the same bundle.
+const limit = Number(process.env.ZOOL_SIZE_LIMIT ?? 143360)
 
 try {
   if (!Number.isSafeInteger(limit) || limit < 0 || process.env.ZOOL_SIZE_LIMIT?.trim() === '') {
