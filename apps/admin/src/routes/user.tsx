@@ -12,6 +12,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { IconButton } from "@/components/xui/icon-button"
+import { useAuth } from "@/hooks/useAuth"
 import { UserCard } from "@/components/user"
 import { selectableTableFeatures, useSelectableTable } from "@/lib/table"
 import { ModelUser } from "@/types"
@@ -22,6 +24,7 @@ import { toast } from "sonner"
 import useSWR from "swr"
 
 export default function UserPage() {
+    const { profile } = useAuth()
     const { t } = useTranslation()
     const { data, mutate, error, isLoading } = useSWR<ModelUser[]>("/api/v1/user", swrFetcher)
 
@@ -38,19 +41,22 @@ export default function UserPage() {
     const columns: ColumnDef<typeof selectableTableFeatures, ModelUser>[] = [
         {
             id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
+            header: ({ table }) => {
+                const rows = table.getRowModel().rows.filter(row => row.getCanSelect())
+                const all = rows.length > 0 && rows.every(row => row.getIsSelected())
+                return (
+                    <Checkbox
+                        checked={all || (rows.some(row => row.getIsSelected()) && "indeterminate")}
+                        disabled={!rows.length}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                )
+            },
             cell: ({ row }) => (
                 <Checkbox
-                    checked={row.getIsSelected()}
+                    disabled={!row.getCanSelect()}
+                    checked={row.getCanSelect() && row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
                 />
@@ -84,6 +90,7 @@ export default function UserPage() {
             id: "actions",
             header: t("Actions"),
             cell: ({ row }) => {
+                if (!row.getCanSelect()) return <IconButton icon="trash" variant="destructive" disabled aria-label={t("Delete")} />
                 const s = row.original
                 return (
                     <ActionButtonGroup
@@ -105,9 +112,9 @@ export default function UserPage() {
         return data ?? []
     }, [data])
 
-    const table = useSelectableTable(dataCache, columns)
+    const table = useSelectableTable(dataCache, columns, row => row.original.id !== profile?.id)
 
-    const selectedRows = table.getSelectedRowModel().rows
+    const selectedRows = table.getSelectedRowModel().rows.filter(row => row.getCanSelect())
 
     return (
         <div className="px-3">

@@ -44,12 +44,14 @@ function entityRowId(row: EntityRow) {
 export function useSelectableTable<T extends EntityRow>(
     data: T[],
     columns: ColumnDef<typeof selectableTableFeatures, T>[],
+    enableRowSelection?: (row: { original: T }) => boolean,
 ) {
     const table = useTable({
         features: selectableTableFeatures,
         data,
         columns,
         getRowId: entityRowId,
+        enableRowSelection: enableRowSelection ?? true,
     })
     useEffect(() => {
         const ids = new Set(data.map(entityRowId))
