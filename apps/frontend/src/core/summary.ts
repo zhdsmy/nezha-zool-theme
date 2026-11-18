@@ -30,10 +30,14 @@ export function summariseDay(
       s.peakDownAt = p.at
     }
   }
-  const first = points.find((p) => p.at >= midnight && p.totalUp !== undefined && p.totalDown !== undefined)
-  if (first && now) {
-    s.todayUp = Math.max(0, now.totalUp - (first.totalUp ?? 0))
-    s.todayDown = Math.max(0, now.totalDown - (first.totalDown ?? 0))
+  for (const [key, total] of [['totalUp', 'todayUp'], ['totalDown', 'todayDown']] as const) {
+    let previous: number | undefined
+    for (const p of [...points.filter(p => p.at >= midnight), ...(now ? [now] : [])]) {
+      const value = p[key]
+      if (value === undefined) continue
+      if (previous !== undefined) s[total] += value >= previous ? value - previous : value
+      previous = value
+    }
   }
   return s
 }

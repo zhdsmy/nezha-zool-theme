@@ -57,10 +57,10 @@ describe('day summary', () => {
     expect(s).toMatchObject({ todayUp: 300, todayDown: 100, peakUp: 9, peakUpAt: 500, peakDown: 7, peakDownAt: 1_000 })
   })
 
-  it('never reports negative traffic after a counter reset', () => {
+  it('includes bytes recorded after a counter reset', () => {
     const s = summariseDay([p(2_000, 1, 1, 900, 900)], { totalUp: 10, totalDown: 10 }, 1_000)
-    expect(s.todayUp).toBe(0)
-    expect(s.todayDown).toBe(0)
+    expect(s.todayUp).toBe(10)
+    expect(s.todayDown).toBe(10)
   })
 })
 
