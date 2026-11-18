@@ -94,6 +94,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const loginOauth2 = useCallback(async () => {
         try {
+            // Resetting the session remounts Login, which reads this flag on mount.
+            window.history.replaceState(window.history.state, document.title, window.location.pathname)
             const epoch = ++authEpoch.current
             clearSessionData()
             setProfile(undefined)
@@ -101,9 +103,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (authEpoch.current !== epoch) return
             user.role = normalizeRole(user.role)
             setProfile(user)
-            // Remove the provider callback flag before navigation, otherwise
-            // cleanup would strip the new MCP authorization query parameters.
-            window.history.replaceState({}, document.title, window.location.pathname)
             navigate(consumeMCPOAuthReturn())
         } catch (error: any) {
             toast(error.message)
