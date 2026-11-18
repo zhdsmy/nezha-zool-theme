@@ -41,7 +41,7 @@ async function openDialogAndSubmit(serverIds: number[], toUser: number) {
     await act(async () => {
         fireEvent.click(screen.getByRole("button"))
     })
-    const userInput = await screen.findByPlaceholderText("User ID")
+    const userInput = await screen.findByPlaceholderText("UserId")
     await act(async () => {
         fireEvent.change(userInput, { target: { value: String(toUser) } })
     })

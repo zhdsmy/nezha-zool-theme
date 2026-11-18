@@ -112,7 +112,7 @@ export const NATCard: React.FC<NATCardProps> = ({ data, mutate }) => {
                                         <FormItem>
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="My NAT Profile" {...field} />
+                                                <Input placeholder={t("Placeholders.NATName")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -147,7 +147,7 @@ export const NATCard: React.FC<NATCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("LocalService")}</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    placeholder="192.168.1.1:80 (with port)"
+                                                    placeholder={t("Placeholders.LocalService")}
                                                     {...field}
                                                 />
                                             </FormControl>

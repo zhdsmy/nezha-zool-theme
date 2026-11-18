@@ -163,7 +163,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         <FormItem>
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="My DDNS Profile" {...field} />
+                                                <Input placeholder={t("Placeholders.DDNSName")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -218,7 +218,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         <FormItem>
                                             <FormLabel>{t("Credential")} 1</FormLabel>
                                             <FormControl>
-                                                <Input autoComplete="section-ddns-id new-password" placeholder="Token ID" {...field} />
+                                                <Input autoComplete="section-ddns-id new-password" placeholder={t("Placeholders.TokenID")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -231,7 +231,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         <FormItem>
                                             <FormLabel>{t("Credential")} 2</FormLabel>
                                             <FormControl>
-                                                <Input type="password" autoComplete="section-ddns-secret new-password" placeholder="Token Secret" {...field} />
+                                                <Input type="password" autoComplete="section-ddns-secret new-password" placeholder={t("Placeholders.TokenSecret")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

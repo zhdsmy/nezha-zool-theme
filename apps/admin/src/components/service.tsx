@@ -167,7 +167,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    placeholder="My Service Monitor"
+                                                    placeholder={t("Placeholders.ServiceName")}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -196,7 +196,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("Target")}</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    placeholder="HTTP (https://t.tt)｜Ping (t.tt)｜TCP (t.tt:80)"
+                                                    placeholder={t("Placeholders.ServiceTarget")}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -216,7 +216,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Select service type" />
+                                                        <SelectValue placeholder={t("Placeholders.SelectServiceType")} />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -318,7 +318,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("NotifierGroupID")}</FormLabel>
                                             <FormControl>
                                                 <Combobox
-                                                    placeholder="Search..."
+                                                    placeholder={t("Search")}
                                                     options={ngroupList}
                                                     onValueChange={field.onChange}
                                                     defaultValue={field.value.toString()}

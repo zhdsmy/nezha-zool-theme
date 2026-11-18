@@ -1,4 +1,25 @@
 {
+    "SelectOptions": "項目を選択",
+    "Path": "パス",
+    "Placeholders": {
+        "ServerName": "マイサーバー",
+        "TaskName": "マイタスク",
+        "SelectTaskType": "タスク種別を選択",
+        "CronExpression": "0 0 3 * * *（午前3時）",
+        "DDNSName": "マイ DDNS プロファイル",
+        "SelectServiceType": "サービス種別を選択",
+        "TokenID": "トークン ID",
+        "TokenSecret": "トークンシークレット",
+        "NATName": "マイ NAT プロファイル",
+        "LocalService": "192.168.1.1:80（ポート番号付き）",
+        "GroupName": "グループ名",
+        "NotifierName": "マイ通知先",
+        "ServiceName": "マイサービス監視",
+        "SelectCycle": "サイクルを選択",
+        "SelectType": "種類を選択",
+        "TrafficVolume": "1TB/月",
+        "ServiceTarget": "HTTP（https://t.tt）、Ping（t.tt）、または TCP（t.tt:80）"
+    },
     "AgentConfig": {
         "ip_report_period": "IP 報告間隔（秒）",
         "report_delay": "状態報告間隔（秒）",

@@ -1,4 +1,28 @@
 {
+    "UserId": "User ID",
+    "Search": "Search...",
+    "Option": "Option",
+    "SelectOptions": "Select options",
+    "Path": "Path",
+    "Placeholders": {
+        "ServerName": "My Server",
+        "TaskName": "My Task",
+        "SelectTaskType": "Select task type",
+        "CronExpression": "0 0 3 * * * (At 3 AM)",
+        "DDNSName": "My DDNS Profile",
+        "SelectServiceType": "Select service type",
+        "TokenID": "Token ID",
+        "TokenSecret": "Token Secret",
+        "NATName": "My NAT Profile",
+        "LocalService": "192.168.1.1:80 (with port)",
+        "GroupName": "Group Name",
+        "NotifierName": "My Notifier",
+        "ServiceName": "My Service Monitor",
+        "SelectCycle": "Select cycle",
+        "SelectType": "Select type",
+        "TrafficVolume": "1TB/Month",
+        "ServiceTarget": "HTTP (https://t.tt) | Ping (t.tt) | TCP (t.tt:80)"
+    },
     "AgentConfig": {
         "ip_report_period": "IP Report Interval (s)",
         "report_delay": "Report Interval (s)",

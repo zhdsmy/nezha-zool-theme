@@ -1,4 +1,25 @@
 {
+    "SelectOptions": "選擇選項",
+    "Path": "路徑",
+    "Placeholders": {
+        "ServerName": "我的伺服器",
+        "TaskName": "我的任務",
+        "SelectTaskType": "選擇任務類型",
+        "CronExpression": "0 0 3 * * *（凌晨 3 點）",
+        "DDNSName": "我的 DDNS 設定",
+        "SelectServiceType": "選擇服務類型",
+        "TokenID": "權杖 ID",
+        "TokenSecret": "權杖密鑰",
+        "NATName": "我的內網穿透設定",
+        "LocalService": "192.168.1.1:80（含連接埠）",
+        "GroupName": "分組名稱",
+        "NotifierName": "我的通知方式",
+        "ServiceName": "我的服務監控",
+        "SelectCycle": "選擇週期",
+        "SelectType": "選擇類型",
+        "TrafficVolume": "1TB/月",
+        "ServiceTarget": "HTTP（https://t.tt）、Ping（t.tt）或 TCP（t.tt:80）"
+    },
     "AgentConfig": {
         "ip_report_period": "IP 上報週期（秒）",
         "report_delay": "狀態上報間隔（秒）",

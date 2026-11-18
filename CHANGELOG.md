@@ -8,6 +8,7 @@
 - Show localized field names in the agent configuration dialog.
 - Keep keyboard-focused fields visible above sticky dialog actions in short viewports.
 - Keep long selections and option names within the available form width.
+- Translate form examples, picker prompts and empty search results.
 
 ## [0.1.0]
 

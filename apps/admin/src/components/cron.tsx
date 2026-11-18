@@ -144,7 +144,7 @@ export const CronCard: React.FC<CronCardProps> = ({ data, mutate }) => {
                                         <FormItem>
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="My Task" {...field} />
+                                                <Input placeholder={t("Placeholders.TaskName")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -162,7 +162,7 @@ export const CronCard: React.FC<CronCardProps> = ({ data, mutate }) => {
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Select task type" />
+                                                        <SelectValue placeholder={t("Placeholders.SelectTaskType")} />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -185,7 +185,7 @@ export const CronCard: React.FC<CronCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("CronExpression")}</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    placeholder="0 0 3 * * * (At 3 AM)"
+                                                    placeholder={t("Placeholders.CronExpression")}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -263,7 +263,7 @@ export const CronCard: React.FC<CronCardProps> = ({ data, mutate }) => {
                                             <FormLabel>{t("NotifierGroup")}</FormLabel>
                                             <FormControl>
                                                 <Combobox
-                                                    placeholder="Search..."
+                                                    placeholder={t("Search")}
                                                     options={ngroupList}
                                                     onValueChange={field.onChange}
                                                     defaultValue={String(field.value ?? "")}

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { type VariantProps, cva } from "class-variance-authority"
 import { CheckIcon, ChevronDown, WandSparkles, XIcon } from "lucide-react"
@@ -137,7 +138,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
             onValueChange,
             variant,
             defaultValue = [],
-            placeholder = "Select options",
+            placeholder,
             animation = 0,
             maxCount = 3,
             modalPopover = false,
@@ -146,6 +147,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         },
         ref,
     ) => {
+        const { t } = useTranslation()
         const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue)
         const [isPopoverOpen, setIsPopoverOpen] = useState(false)
         const [isAnimating, setIsAnimating] = useState(false)
@@ -281,7 +283,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                         ) : (
                             <div className="flex items-center justify-between w-full mx-auto">
                                 <span className="min-w-0 truncate text-sm text-muted-foreground mx-3">
-                                    {placeholder}
+                                    {placeholder ?? t("SelectOptions")}
                                 </span>
                                 <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
                             </div>
@@ -296,9 +298,9 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                     onTouchMove={stopTouchMoveEventPropagation}
                 >
                     <Command>
-                        <CommandInput placeholder="Search..." onKeyDown={handleInputKeyDown} />
+                        <CommandInput placeholder={t("Search")} onKeyDown={handleInputKeyDown} />
                         <CommandList>
-                            <CommandEmpty>No results found.</CommandEmpty>
+                            <CommandEmpty>{t("NoResults")}</CommandEmpty>
                             <CommandGroup>
                                 <CommandItem
                                     key="all"

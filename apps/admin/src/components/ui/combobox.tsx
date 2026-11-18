@@ -10,6 +10,7 @@ import {
     CommandList,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown } from "lucide-react"
 import { ButtonHTMLAttributes, forwardRef, useState } from "react"
@@ -28,6 +29,7 @@ interface ComboboxProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     ({ options, placeholder, defaultValue, className, onValueChange, ...props }, ref) => {
+        const { t } = useTranslation()
         const [open, setOpen] = useState(false)
         const [value, setValue] = useState(defaultValue)
 
@@ -69,7 +71,7 @@ export const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                     >
                         <CommandInput placeholder={placeholder} className="h-9" />
                         <CommandList>
-                            <CommandEmpty>No result found.</CommandEmpty>
+                            <CommandEmpty>{t("NoResults")}</CommandEmpty>
                             <CommandGroup>
                                 {options.map((option) => (
                                     <CommandItem

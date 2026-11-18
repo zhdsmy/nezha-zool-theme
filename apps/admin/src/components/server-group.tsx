@@ -105,7 +105,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
                                         <FormItem>
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Group Name" {...field} />
+                                                <Input placeholder={t("Placeholders.GroupName")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

@@ -82,7 +82,7 @@ export const ServerConfigCardBatch: React.FC<ServerConfigCardBatchProps> = ({ si
                             <Label>{t("Option")}</Label>
                             <Input
                                 type="text"
-                                placeholder="option"
+                                placeholder={t("Option")}
                                 value={currentKey}
                                 onChange={(e) => {
                                     setCurrentKey(e.target.value)
