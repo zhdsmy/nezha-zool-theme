@@ -1,4 +1,6 @@
 {
+    "InterfaceLanguage": "Idioma de la interfaz",
+    "NotificationLanguage": "Idioma de las notificaciones",
     "Retry": "Reintentar",
     "Goto": "Ir a",
     "UpdateProfile": "Actualizar perfil",

@@ -1,4 +1,6 @@
 {
+    "InterfaceLanguage": "Oberflächensprache",
+    "NotificationLanguage": "Benachrichtigungssprache",
     "Retry": "Erneut versuchen",
     "theme": {
         "dark": "Dunkel",

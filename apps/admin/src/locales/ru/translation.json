@@ -1,4 +1,6 @@
 {
+    "InterfaceLanguage": "Язык интерфейса",
+    "NotificationLanguage": "Язык уведомлений",
     "Retry": "Повторить",
     "Close": "Закрыть",
     "MaximumLatency": "Максимальная задержка (мс)",

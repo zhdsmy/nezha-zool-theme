@@ -14,7 +14,7 @@ vi.mock("react-i18next", () => ({
     useTranslation: () => ({
         t: (k: string) => k,
         i18n: {
-            language: "en",
+            language: "en-US",
             changeLanguage: (lng: string) => {
                 changeLanguageCalls.push(lng)
             },
@@ -105,6 +105,14 @@ test("SettingsPage toasts Success when updateSettings resolves", async () => {
 
     await waitFor(() => expect(updateSettings).toHaveBeenCalled())
 
+    expect(updateSettings.mock.calls[0][0].language).toBe("zh-CN")
+    expect(changeLanguageCalls).toEqual([])
+    const interfaceSelect = screen.getByRole("combobox", { name: "InterfaceLanguage" })
+    HTMLElement.prototype.scrollIntoView = vi.fn()
+    fireEvent.keyDown(interfaceSelect, { key: "Enter" })
+    fireEvent.keyDown(await screen.findByRole("option", { name: "日本語" }), { key: "Enter" })
+    expect(changeLanguageCalls).toEqual(["ja-JP"])
+    expect(updateSettings).toHaveBeenCalledTimes(1)
     expect(toastCalls).toContain("Success")
     expect(toastCalls).not.toContain("Error")
 })
