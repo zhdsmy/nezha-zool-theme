@@ -333,7 +333,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
             aria-pressed={visible(task.id)}
             onClick={() => toggle(task.id)}
             onPointerEnter={(e) => e.pointerType === 'mouse' && setFocus(task.id)}
-            title={`${task.name} · ${t('node.min')} ${formatNumber(task.min, 0)} · ${t('node.max')} ${formatNumber(task.max, 0)} ms`}
+            title={`${task.name} · ${t('node.min')} ${formatLatency(task.min)} · ${t('node.max')} ${formatLatency(task.max)}`}
             className={`node-ping-row inline-flex max-w-full min-h-8 items-center gap-1.5 rounded-full px-1.5 text-[12px] transition-opacity hover:bg-surface-2 ${visible(task.id) ? '' : 'opacity-40'}`}
           >
             <span
@@ -341,7 +341,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
               style={visible(task.id) ? { background: color(i) } : { boxShadow: `inset 0 0 0 1.5px ${color(i)}` }}
             />
             <span className="truncate">{task.name}</span>
-            <span className="num text-muted">{formatNumber(task.avg, task.avg < 10 ? 1 : 0)}</span>
+            <span className="num text-muted">{formatLatency(task.avg)}</span>
           </button>
         ))}
         {shown !== null && (
@@ -352,8 +352,8 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
       </div>
       {solo && (
         <p className="node-ping-detail num mt-1 text-[12px] text-muted">
-          {t('node.avg')} <span className="text-ink">{formatNumber(solo.avg, 1)} ms</span> · {t('node.min')} {formatNumber(solo.min, 0)} · {t('node.max')}{' '}
-          {formatNumber(solo.max, 0)}
+          {t('node.avg')} <span className="text-ink">{formatLatency(solo.avg)}</span> · {t('node.min')} {formatLatency(solo.min)} · {t('node.max')}{' '}
+          {formatLatency(solo.max)}
           {solo.loss !== undefined && (
             <span className={solo.loss > 5 ? 'text-danger' : ''}>
               {' '}

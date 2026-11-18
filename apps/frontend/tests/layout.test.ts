@@ -30,3 +30,10 @@ it('reserves 44px touch targets for header and chart controls', () => {
   expect(css).toMatch(/header \.icon-btn\s*\{\s*width: 44px;\s*height: 44px/)
   expect(css).toMatch(/@media \(pointer: coarse\)\s*\{\s*\.node-tabs[^}]*\.node-ping-list button[^}]*min-height: 44px/)
 })
+
+it('labels latency legend and detail readings with the same precision and unit', () => {
+  const page = readFileSync(new URL('../src/pages/NodePage.tsx', import.meta.url), 'utf8')
+  for (const reading of ['task.avg', 'task.min', 'task.max', 'solo.avg', 'solo.min', 'solo.max']) {
+    expect(page).toContain(`formatLatency(${reading})`)
+  }
+})
