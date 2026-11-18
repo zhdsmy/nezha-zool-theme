@@ -190,10 +190,10 @@ export function parsePublicNote(note: string | undefined) {
   if (b) {
     const [raw, period, ...rest] = text(b.amount).split('/')
     const embedded = period === undefined ? undefined : cycleDays(period)
-    const amount = rest.length || (period !== undefined && !embedded) ? '' : raw.trim()
+    const amount = rest.length || (period !== undefined && !embedded) ? '' : raw.trim().replace(/(\d),(?=\d{3}(?:\D|$))/g, '$1')
     const num = /-?\d+(?:\.\d+)?/.exec(amount)
     if (amount === '-1') out.price = -2
-    else if (amount === '0' || /free|免费/i.test(amount)) out.price = -1
+    else if (amount === '0' || /free|免费|免費/i.test(amount)) out.price = -1
     else if (num) {
       const price = Number(num[0])
       if (Number.isFinite(price) && price > 0) {

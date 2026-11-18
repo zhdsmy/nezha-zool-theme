@@ -103,7 +103,7 @@ export function formatClock(at: number, withDate = false, locale?: string) {
 
 export function currencyCode(currency: string): string | null {
   const code = currency.trim().toUpperCase()
-  return ({ '$': 'USD', 'US$': 'USD', '¥': 'CNY', '￥': 'CNY', RMB: 'CNY', '€': 'EUR', 'AUD$': 'AUD', 'A$': 'AUD', '£': 'GBP', '₽': 'RUB', 'NT$': 'TWD', 'S$': 'SGD', '₩': 'KRW', 'C$': 'CAD', C: 'CAD', 'HK$': 'HKD', 'JP¥': 'JPY' } as Record<string, string>)[code]
+  return ({ '$': 'USD', 'US$': 'USD', '¥': 'CNY', '￥': 'CNY', RMB: 'CNY', 元: 'CNY', '€': 'EUR', 'AUD$': 'AUD', 'A$': 'AUD', '£': 'GBP', '₽': 'RUB', 'NT$': 'TWD', 'S$': 'SGD', '₩': 'KRW', 'C$': 'CAD', C: 'CAD', 'HK$': 'HKD', 'JP¥': 'JPY' } as Record<string, string>)[code]
     ?? (/^[A-Z]{3}$/.test(code) ? code : null)
 }
 

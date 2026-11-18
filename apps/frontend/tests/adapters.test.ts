@@ -158,3 +158,9 @@ it('reads embedded cycles, counted units and legacy billing symbols', () => {
   expect(note('HK$15/3Month', 'invalid').billingCycle).toBe(0)
   expect(note('HK$15/0Month').price).toBe(0)
 })
+
+it('keeps grouped legacy amounts and free text prices', () => {
+  const parse = (amount: string) => parsePublicNote(JSON.stringify({ billingDataMod: { amount } }))
+  expect(parse('1,234,567.50 元')).toMatchObject({ price: 1234567.5, currency: '元' })
+  expect(parse('免費方案').price).toBe(-1)
+})
