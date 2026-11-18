@@ -1,3 +1,4 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
 import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createAlertRule, updateAlertRule } from "@/api/alert-rule"
 import { Button } from "@/components/ui/button"
@@ -37,8 +38,7 @@ import { conv } from "@/lib/utils"
 import { ModelAlertRule } from "@/types"
 import { triggerModes } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect, useState } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -107,7 +107,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
             next_transfer_at: ("next_transfer_at" in rule && rule.next_transfer_at != null) ? rule.next_transfer_at : {},
         })) }
     }
-    const form = useForm<AlertRuleFormInput, unknown, AlertRuleFormData>({
+    const { form, open, onOpenChange } = useFormDialog<AlertRuleFormInput, AlertRuleFormData>(!!data, {
         resolver: zodResolver(alertRuleFormSchema),
         defaultValues: data
             ? {
@@ -121,7 +121,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
               }
             : {
                   name: "",
-                  rules_raw: "",
+                  rules_raw: "[]",
                   rules: [],
                   fail_trigger_tasks: [],
                   fail_trigger_tasks_raw: "",
@@ -130,36 +130,13 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
                   notification_group_id: 0,
                   trigger_mode: 0,
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
 
-    const [open, setOpen] = useState(false)
-
-    // 结构化规则编辑状态：从已有数据或 rules_raw 初始化
-    const initialRules = (() => {
-        try {
-            if (data?.rules) return data.rules
-            const raw = form.getValues("rules_raw")
-            if (!raw) return []
-            const parsed: unknown = JSON.parse(raw)
-            return z.array(ruleSchema).parse(parsed)
-        } catch {
-            return []
-        }
-    })()
-    const [rulesUI, setRulesUI] = useState<AlertRuleEntry[]>(initialRules)
-
-    // 同步到 rules_raw（提交仍走 JSON 字符串）
-    useEffect(() => {
-        try {
-            form.setValue("rules_raw", JSON.stringify(rulesUI), { shouldDirty: true })
-        } catch {
-            // ignore
-        }
-    }, [form, rulesUI])
-
+    const rulesUI = useWatch({ control: form.control, name: "rules" })
+    const setRulesUI = (rules: AlertRuleEntry[]) => {
+        form.setValue("rules", rules, { shouldDirty: true })
+        form.setValue("rules_raw", JSON.stringify(rules), { shouldDirty: true })
+    }
     const rulesRaw = useWatch({ control: form.control, name: "rules_raw" })
 
     const { submitting, runSubmit } = useSubmitLock()
@@ -182,7 +159,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
     })
@@ -194,7 +171,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
     })) || [{ value: "", label: "" }]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>

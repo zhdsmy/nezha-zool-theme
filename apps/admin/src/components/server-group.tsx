@@ -1,3 +1,4 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
 import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createServerGroup, updateServerGroup } from "@/api/server-group"
 import { Button } from "@/components/ui/button"
@@ -27,8 +28,6 @@ import { MultiSelect } from "@/components/xui/multi-select"
 import { useServer } from "@/hooks/useServer"
 import { ModelServerGroupResponseItem } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -46,7 +45,7 @@ const serverGroupFormSchema = z.object({
 
 export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
-    const form = useForm<z.infer<typeof serverGroupFormSchema>>({
+    const { form, open, onOpenChange } = useFormDialog<z.infer<typeof serverGroupFormSchema>>(!!data, {
         resolver: zodResolver(serverGroupFormSchema),
         defaultValues: data
             ? {
@@ -57,12 +56,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
                   name: "",
                   servers: [],
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
-
-    const [open, setOpen] = useState(false)
 
     const { submitting, runSubmit } = useSubmitLock()
     const onSubmit = runSubmit(async (values: z.infer<typeof serverGroupFormSchema>) => {
@@ -79,7 +73,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
     })
@@ -91,7 +85,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
     })) || [{ value: "", label: "" }]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>

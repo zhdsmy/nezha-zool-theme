@@ -1,3 +1,4 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
 import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createNotificationGroup, updateNotificationGroup } from "@/api/notification-group"
 import { Button } from "@/components/ui/button"
@@ -27,8 +28,6 @@ import { MultiSelect } from "@/components/xui/multi-select"
 import { useNotification } from "@/hooks/useNotfication"
 import { ModelNotificationGroupResponseItem } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -46,7 +45,7 @@ const notificationGroupFormSchema = z.object({
 
 export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
-    const form = useForm<z.infer<typeof notificationGroupFormSchema>>({
+    const { form, open, onOpenChange } = useFormDialog<z.infer<typeof notificationGroupFormSchema>>(!!data, {
         resolver: zodResolver(notificationGroupFormSchema),
         defaultValues: data
             ? {
@@ -57,12 +56,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
                   name: "",
                   notifications: [],
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
-
-    const [open, setOpen] = useState(false)
 
     const { submitting, runSubmit } = useSubmitLock()
     const onSubmit = runSubmit(async (values: z.infer<typeof notificationGroupFormSchema>) => {
@@ -79,7 +73,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
     })
@@ -91,7 +85,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
     })) || [{ value: "", label: "" }]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>
