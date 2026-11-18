@@ -334,7 +334,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
             onClick={() => toggle(task.id)}
             onPointerEnter={(e) => e.pointerType === 'mouse' && setFocus(task.id)}
             title={`${task.name} · ${t('node.min')} ${formatNumber(task.min, 0)} · ${t('node.max')} ${formatNumber(task.max, 0)} ms`}
-            className={`node-ping-row inline-flex max-w-full min-h-7 items-center gap-1.5 rounded-full px-1.5 text-[12px] transition-opacity hover:bg-surface-2 ${visible(task.id) ? '' : 'opacity-40'}`}
+            className={`node-ping-row inline-flex max-w-full min-h-8 items-center gap-1.5 rounded-full px-1.5 text-[12px] transition-opacity hover:bg-surface-2 ${visible(task.id) ? '' : 'opacity-40'}`}
           >
             <span
               className="size-2 shrink-0 rounded-full"
@@ -345,7 +345,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
           </button>
         ))}
         {shown !== null && (
-          <button type="button" className="min-h-7 rounded-full px-1.5 text-[12px] text-accent-text hover:bg-surface-2" onClick={() => setShown(null)}>
+          <button type="button" className="min-h-8 rounded-full px-1.5 text-[12px] text-accent-text hover:bg-surface-2" onClick={() => setShown(null)}>
             {t('node.showAllLines')}
           </button>
         )}
