@@ -51,36 +51,51 @@ describe('format', () => {
 })
 
 describe('day summary', () => {
-  const p = (at: number, netUp: number, netDown: number, totalUp?: number, totalDown?: number) => ({
-    at, cpu: 0, memUsed: 0, swapUsed: 0, diskUsed: 0, netUp, netDown, load1: 0, tcp: 0, udp: 0, process: 0, totalUp, totalDown,
+  const bucketMs = 30_000
+  const p = (bucket: number, netUp: number, netDown: number, totalUp?: number, totalDown?: number) => ({
+    at: bucket * bucketMs, cpu: 0, memUsed: 0, swapUsed: 0, diskUsed: 0, netUp, netDown, load1: 0, tcp: 0, udp: 0, process: 0, totalUp, totalDown,
   })
 
   it('uses counter growth since midnight and the highest recorded rates', () => {
-    const midnight = 1_000
-    const s = summariseDay([p(500, 9, 1, 100, 200), p(1_000, 3, 7, 150, 260), p(2_000, 5, 2, 400, 300)], [{ at: 3_000, totalUp: 450, totalDown: 360 }], midnight)
-    expect(s).toMatchObject({ todayUp: 300, todayDown: 100, peakUp: 9, peakUpAt: 500, peakDown: 7, peakDownAt: 1_000 })
+    const midnight = bucketMs
+    const s = summariseDay([p(0, 9, 1, 100, 200), p(1, 3, 7, 150, 260), p(2, 5, 2, 400, 300)], [{ at: 3 * bucketMs, totalUp: 450, totalDown: 360 }], midnight)
+    expect(s).toMatchObject({ todayUp: 300, todayDown: 100, peakUp: 9, peakUpAt: 0, peakDown: 7, peakDownAt: midnight })
   })
 
   it('requires a recorded baseline separately for each direction', () => {
-    const live = [{ at: 5, totalUp: 100, totalDown: 90 }]
+    const live = [{ at: 5 * bucketMs, totalUp: 100, totalDown: 90 }]
     expect(summariseDay([p(2, 0, 0, 75)], live, 1)).toMatchObject({ todayUp: 25, todayDown: null })
     expect(summariseDay([p(2, 0, 0, 75), p(3, 0, 0, undefined, 80)], live, 1).todayDown).toBe(10)
   })
 
   it('merges delayed reports by measurement time and retains reset endpoints', () => {
     const live: { at: number; totalUp: number; totalDown: number }[] = []
-    for (const [at, value] of [[3, 140], [5, 15], [2, 120], [4, 10], [6, 20], [7, 25]]) {
-      recordCounters(live, { at, totalUp: value, totalDown: value }, 1)
+    for (const [bucket, value] of [[3, 140], [5, 15], [2, 120], [4, 10], [6, 20], [7, 25]]) {
+      recordCounters(live, { at: bucket * bucketMs, totalUp: value, totalDown: value }, 1)
     }
     expect(live.length).toBeLessThan(6)
     const summary = summariseDay([p(1, 0, 0, 100, 100), p(3, 0, 0, 150, 140)], live, 1)
     expect(summary).toMatchObject({ todayUp: 75, todayDown: 65 })
-    recordCounters(live, { at: 8, totalUp: 30, totalDown: 30 }, 8)
-    expect(live.map(p => p.at)).toEqual([8])
+    recordCounters(live, { at: 8 * bucketMs, totalUp: 30, totalDown: 30 }, 8 * bucketMs)
+    expect(live.map(p => p.at)).toEqual([8 * bucketMs])
+  })
+
+  it('uses each direction’s last 30-second bucket before adding live counter increments', () => {
+    const live = [
+      { at: 130_000, totalUp: 1010, totalDown: 530 },
+      { at: 160_000, totalUp: 1030, totalDown: 550 },
+      { at: 180_000, totalUp: 1045, totalDown: 560 },
+      { at: 185_000, totalUp: 5, totalDown: 565 },
+    ]
+    const base = [p(3, 0, 0, 1000, 500)]
+    expect(summariseDay(base, live, 0)).toMatchObject({ todayUp: 50, todayDown: 65 })
+    // 1040 was sampled late in [150000,180000), but the API labels it 150000.
+    const refreshed = [...base, p(4, 0, 0, 1020), p(5, 0, 0, 1040)]
+    expect(summariseDay(refreshed, live, 0)).toMatchObject({ todayUp: 50, todayDown: 65 })
   })
 
   it('includes bytes recorded after a counter reset', () => {
-    const s = summariseDay([p(2_000, 1, 1, 900, 900)], [{ at: 3_000, totalUp: 10, totalDown: 10 }], 1_000)
+    const s = summariseDay([p(2, 1, 1, 900, 900)], [{ at: 3 * bucketMs, totalUp: 10, totalDown: 10 }], bucketMs)
     expect(s.todayUp).toBe(10)
     expect(s.todayDown).toBe(10)
   })
