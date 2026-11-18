@@ -18,8 +18,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/frontend-cards-dark.png" />
-    <img src="docs/screenshots/frontend-ledger-light.png" alt="nezha-zool-theme 公开状态页预览" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/zh-CN/frontend-cards-dark.png" />
+    <img src="docs/screenshots/zh-CN/frontend-ledger-light.png" alt="nezha-zool-theme 公开状态页预览" width="100%" />
   </picture>
 </p>
 
@@ -56,17 +56,19 @@
 
 以下截图均通过内置演示数据与 Mock API 在 `2×` Retina 分辨率下实机渲染，涵盖 **桌面端（`1440px`）**、**平板端（`834px`）** 与 **手机端（`390px`）** 不同屏幕尺寸及 **浅色 / 深色** 主题。
 
+安装 Playwright Chromium（`pnpm --dir apps/admin exec playwright install chromium`）后，运行 `NZT_DOCS_LANG=zh-CN pnpm screenshots` 生成简体中文截图，或运行 `pnpm screenshots` 生成英文截图。
+
 ### 1. 公开状态页 — 桌面端（`1440px`）
 
 #### 首页：台账列表视图（浅色） vs. 卡片网格视图（深色）
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-ledger-light.png" alt="前台桌面端台账浅色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-ledger-light.png" alt="前台桌面端台账浅色模式" />
       <br /><sub><strong>浅色 · Ledger 台账视图</strong> — 集群总览、地区筛选、多币种月费汇总与高密度指标行</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-cards-dark.png" alt="前台桌面端卡片深色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-cards-dark.png" alt="前台桌面端卡片深色模式" />
       <br /><sub><strong>深色 · Cards 卡片视图</strong> — 实时吞吐微图、告警/到期角标与账单标签</sub>
     </td>
   </tr>
@@ -76,11 +78,11 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-node-light.png" alt="节点详情浅色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-node-light.png" alt="节点详情浅色模式" />
       <br /><sub><strong>浅色 · 节点详情</strong> — SVG 环形仪表、硬件/网络/账单信息台账与 7 天上报热力条</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-node-dark.png" alt="节点详情深色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-node-dark.png" alt="节点详情深色模式" />
       <br /><sub><strong>深色 · 节点详情</strong> — 磁盘预警阈值着色与高负载状态展示</sub>
     </td>
   </tr>
@@ -90,11 +92,11 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-charts-dark.png" alt="24小时TSDB历史负载深色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-charts-dark.png" alt="24小时TSDB历史负载深色模式" />
       <br /><sub><strong>深色 · 24h 历史负载</strong> — CPU、内存、磁盘、网络、连接数与负载/进程六宫格面积图</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-latency-light.png" alt="多探针服务延迟浅色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-latency-light.png" alt="多探针服务延迟浅色模式" />
       <br /><sub><strong>浅色 · 服务监控延迟</strong> — 多探针 RTT 历史曲线、时间跨度切换与 <em>Hide spikes</em> 削峰过滤</sub>
     </td>
   </tr>
@@ -108,11 +110,11 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/admin-servers-light.png" alt="管理后台服务器列表浅色模式" />
+      <img src="docs/screenshots/zh-CN/admin-servers-light.png" alt="管理后台服务器列表浅色模式" />
       <br /><sub><strong>浅色 · 服务器列表</strong> — 96rem 宽屏表格、双栈 IP 堆叠、批量操作栏与一键安装命令</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/admin-servers-dark.png" alt="管理后台服务器列表深色模式" />
+      <img src="docs/screenshots/zh-CN/admin-servers-dark.png" alt="管理后台服务器列表深色模式" />
       <br /><sub><strong>深色 · 服务器列表</strong> — 低眩光深色层级，适合夜间运维</sub>
     </td>
   </tr>
@@ -122,11 +124,11 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/admin-services-light.png" alt="管理后台服务监控浅色模式" />
+      <img src="docs/screenshots/zh-CN/admin-services-light.png" alt="管理后台服务监控浅色模式" />
       <br /><sub><strong>浅色 · 服务监控</strong> — ICMP / TCP / HTTPS 拨测规则、延迟阈值与排除节点配置</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/admin-settings-dark.png" alt="管理后台系统设置深色模式" />
+      <img src="docs/screenshots/zh-CN/admin-settings-dark.png" alt="管理后台系统设置深色模式" />
       <br /><sub><strong>深色 · 系统设置</strong> — 站点名称、自定义前后台模板选择、DNS 与 Agent 接入配置</sub>
     </td>
   </tr>
@@ -139,11 +141,11 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/frontend-tablet-light.png" alt="前台平板端分组卡片浅色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-tablet-light.png" alt="前台平板端分组卡片浅色模式" />
       <br /><sub><strong>公开状态页 · 浅色（834×1112）</strong> — 双列卡片视图按服务器分组（<em>Edge</em> / <em>Core</em>）聚合</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/admin-tablet-dark.png" alt="管理后台平板端告警规则深色模式" />
+      <img src="docs/screenshots/zh-CN/admin-tablet-dark.png" alt="管理后台平板端告警规则深色模式" />
       <br /><sub><strong>管理后台 · 深色（834×980）</strong> — 告警规则管理与左上角响应式下拉导航</sub>
     </td>
   </tr>
@@ -156,19 +158,19 @@
 <table>
   <tr>
     <td width="25%" align="center">
-      <img src="docs/screenshots/frontend-mobile-light.png" alt="前台手机端首页浅色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-mobile-light.png" alt="前台手机端首页浅色模式" />
       <br /><sub><strong>公开首页 · 浅色</strong><br />移动端总览卡片与紧凑列表</sub>
     </td>
     <td width="25%" align="center">
-      <img src="docs/screenshots/frontend-mobile-dark.png" alt="前台手机端详情深色模式" />
+      <img src="docs/screenshots/zh-CN/frontend-mobile-dark.png" alt="前台手机端详情深色模式" />
       <br /><sub><strong>节点详情 · 深色</strong><br />自适应 2×2 环形仪表</sub>
     </td>
     <td width="25%" align="center">
-      <img src="docs/screenshots/admin-mobile-light.png" alt="后台手机端卡片浅色模式" />
+      <img src="docs/screenshots/zh-CN/admin-mobile-light.png" alt="后台手机端卡片浅色模式" />
       <br /><sub><strong>后台服务器 · 浅色</strong><br />窄屏触控友好的卡片行</sub>
     </td>
     <td width="25%" align="center">
-      <img src="docs/screenshots/admin-mobile-dark.png" alt="后台手机端导航菜单深色模式" />
+      <img src="docs/screenshots/zh-CN/admin-mobile-dark.png" alt="后台手机端导航菜单深色模式" />
       <br /><sub><strong>后台导航 · 深色</strong><br />顶部下拉快速切换页面</sub>
     </td>
   </tr>

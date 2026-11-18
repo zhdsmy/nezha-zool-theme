@@ -56,6 +56,8 @@
 
 All screenshots below are rendered at `2×` Retina resolution using synthetic fleet & API mock data across **Desktop (`1440px`)**, **Tablet (`834px`)**, and **Mobile (`390px`)** viewports in both **Light** and **Dark** themes.
 
+With Playwright Chromium installed (`pnpm --dir apps/admin exec playwright install chromium`), run `pnpm screenshots` for English or `NZT_DOCS_LANG=zh-CN pnpm screenshots` for Simplified Chinese.
+
 ### 1. Public Status Frontend — Desktop (`1440px`)
 
 #### Home Page: Ledger View (Light) vs. Cards View (Dark)
