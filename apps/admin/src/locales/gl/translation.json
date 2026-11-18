@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "Idioma da interface",
+    "NotificationLanguage": "Idioma das notificacións",
+    "Retry": "Tentar de novo",
     "nezha": "Monitoreo Nezha",
     "theme": {
         "light": "Claro",

@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { deleteWAF } from "@/api/waf"
 import { ActionButtonGroup } from "@/components/action-button-group"
@@ -112,9 +113,8 @@ export default function WAFPage() {
             accessorKey: "lastBlockTime",
             accessorFn: (row) => row.block_timestamp,
             cell: ({ row }) => {
-                const s = row.original
-                const date = new Date((s.block_timestamp || 0) * 1000)
-                return <span>{date.toISOString()}</span>
+                const seconds = row.original.block_timestamp
+                return parseTimestamp(seconds == null ? undefined : seconds * 1000)?.toISOString() ?? "—"
             },
         },
         {
@@ -269,7 +269,7 @@ export default function WAFPage() {
                     </HeaderButtonGroup>
                 )}
             </div>
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>

@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "表示言語",
+    "NotificationLanguage": "通知言語",
+    "Retry": "再試行",
     "EnableMCP": "MCP エンドポイントを有効化（デフォルトは無効。有効化前に API トークンのスコープと許可サーバー一覧を確認してください）",
     "ApiTokens": "API トークン",
     "CreateApiToken": "API トークンを作成",

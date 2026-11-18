@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "Langue de l’interface",
+    "NotificationLanguage": "Langue des notifications",
+    "Retry": "Réessayer",
     "theme": {
         "light": "Clair",
         "dark": "Sombre",

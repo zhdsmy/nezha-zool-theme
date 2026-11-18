@@ -1,3 +1,4 @@
+import { ResourceLoadError } from "@/components/ui/table"
 import { swrFetcher } from "@/api/api"
 import {
     FrontendReleasePage,
@@ -204,7 +205,7 @@ export default function FrontendsPage() {
                     )}
                     <section aria-label={t("FrontendManager.Available")} className="space-y-3">
                         <h2 className="font-medium">{t("FrontendManager.Available")}</h2>
-                        {error && <p role="alert">{String(error)}</p>}
+                        {error && <ResourceLoadError error={error} onRetry={mutate} />}
                         {!data && !error && <p>{t("FrontendManager.Loading")}</p>}
                         {templates.map((template) => (
                             <div

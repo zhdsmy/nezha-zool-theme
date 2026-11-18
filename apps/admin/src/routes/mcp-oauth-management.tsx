@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import {
     listMCPOAuthClients,
     listMCPOAuthGrants,
@@ -7,6 +8,7 @@ import {
 import { SettingsTab } from "@/components/settings-tab"
 import { Button } from "@/components/ui/button"
 import {
+    ResourceLoadError,
     Table,
     TableBody,
     TableCell,
@@ -21,7 +23,7 @@ import { useTranslation } from "react-i18next"
 import useSWR, { useSWRConfig } from "swr"
 
 function displayTime(value?: string) {
-    return value ? new Date(value).toLocaleString() : "—"
+    return parseTimestamp(value)?.toLocaleString() ?? "—"
 }
 
 function errorMessage(error: unknown) {
@@ -88,11 +90,8 @@ function OAuthGrants({ all, userID }: { all: boolean; userID: number }) {
     }
     return (
         <>
-            {(actionError || error) && (
-                <p role="alert" className="text-destructive">
-                    {actionError || errorMessage(error)}
-                </p>
-            )}
+            {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
+            {error && <ResourceLoadError error={error} onRetry={mutate} />}
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -210,11 +209,8 @@ function OAuthClients({ userID }: { userID: number }) {
             <p className="mb-4 text-sm text-muted-foreground">
                 {t("MCPOAuthManager.ClientPolicy")}
             </p>
-            {(actionError || error) && (
-                <p role="alert" className="text-destructive">
-                    {actionError || errorMessage(error)}
-                </p>
-            )}
+            {actionError && <p role="alert" className="text-destructive">{actionError}</p>}
+            {error && <ResourceLoadError error={error} onRetry={mutate} />}
             <Table>
                 <TableHeader>
                     <TableRow>

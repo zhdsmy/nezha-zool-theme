@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "介面語言",
+    "NotificationLanguage": "通知語言",
+    "Retry": "重試",
     "nezha": "哪吒監控",
     "theme": {
         "light": "亮色",

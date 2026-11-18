@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { deleteUser } from "@/api/user"
 import { ActionButtonGroup } from "@/components/action-button-group"
@@ -84,7 +85,7 @@ export default function UserPage() {
             header: t("LastLogin"),
             accessorKey: "updated_at",
             accessorFn: (row) =>
-                row.updated_at ? new Date(row.updated_at).toLocaleString() : t("Never"),
+                parseTimestamp(row.updated_at)?.toLocaleString() ?? t("Never"),
         },
         {
             id: "actions",
@@ -135,7 +136,7 @@ export default function UserPage() {
                 </HeaderButtonGroup>
             </div>
 
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>

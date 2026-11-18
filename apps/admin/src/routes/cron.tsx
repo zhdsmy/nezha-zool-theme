@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { deleteCron, runCron } from "@/api/cron"
 import { ActionButtonGroup } from "@/components/action-button-group"
@@ -148,7 +149,7 @@ export default function CronPage() {
                 const s = row.original
                 return (
                     <div className="max-w-24 whitespace-normal break-words">
-                        {s.last_executed_at}
+                        {parseTimestamp(s.last_executed_at) ? s.last_executed_at : "—"}
                     </div>
                 )
             },
@@ -222,7 +223,7 @@ export default function CronPage() {
                 </HeaderButtonGroup>
             </div>
 
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>

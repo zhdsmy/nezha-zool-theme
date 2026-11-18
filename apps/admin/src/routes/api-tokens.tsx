@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { useSubmitLock } from "@/hooks/useSubmitLock"
 import {
     ApiTokenCreateResponse,
@@ -36,6 +37,11 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import useSWR from "swr"
+
+function lastUsedLabel(token: ApiTokenView, empty: string) {
+    const date = parseTimestamp(token.last_used_at)
+    return date ? `${date.toLocaleString()} (${token.last_used_ip ?? "?"})` : empty
+}
 
 export default function ApiTokensPage() {
     const { t } = useTranslation()
@@ -79,7 +85,7 @@ export default function ApiTokensPage() {
                 <Button onClick={() => setCreateOpen(true)}>{t("CreateApiToken")}</Button>
             </div>
 
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     <TableRow>
                         <TableHead>{t("Name")}</TableHead>
@@ -128,14 +134,10 @@ export default function ApiTokensPage() {
                                         : t("ApiTokenAllServers")}
                                 </TableCell>
                                 <TableCell className="text-xs">
-                                    {tok.expires_at
-                                        ? new Date(tok.expires_at).toLocaleString()
-                                        : t("ApiTokenNever")}
+                                    {parseTimestamp(tok.expires_at)?.toLocaleString() ?? t("ApiTokenNever")}
                                 </TableCell>
                                 <TableCell className="text-xs">
-                                    {tok.last_used_at
-                                        ? `${new Date(tok.last_used_at).toLocaleString()} (${tok.last_used_ip ?? "?"})`
-                                        : t("ApiTokenNever")}
+                                    {lastUsedLabel(tok, t("ApiTokenNever"))}
                                 </TableCell>
                                 <TableCell>
                                     <Button
@@ -331,8 +333,12 @@ function RevealedTokenDialog({
                             variant="secondary"
                             size="sm"
                             onClick={async () => {
-                                await navigator.clipboard.writeText(token.token)
-                                toast(t("Copied"))
+                                try {
+                                    await navigator.clipboard.writeText(token.token)
+                                    toast(t("Copied"))
+                                } catch {
+                                    toast(t("ClipboardWriteFailed"))
+                                }
                             }}
                         >
                             {t("Copy")}

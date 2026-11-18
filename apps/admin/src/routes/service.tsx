@@ -205,7 +205,7 @@ export default function ServicePage() {
                 </HeaderButtonGroup>
             </div>
 
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>

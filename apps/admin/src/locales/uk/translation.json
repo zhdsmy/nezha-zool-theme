@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "Мова інтерфейсу",
+    "NotificationLanguage": "Мова сповіщень",
+    "Retry": "Спробувати ще раз",
     "nezha": "Nezha Моніторинг",
     "theme": {
         "light": "Світло",

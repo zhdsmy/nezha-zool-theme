@@ -7,11 +7,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
 import useSettings from "@/hooks/useSetting"
-import { copyToClipboard } from "@/lib/utils"
+import { useClipboard } from "@/hooks/useClipboard"
 import { ModelProfile, ModelSetting } from "@/types"
 import i18next from "i18next"
 import { Check, Copy, Download } from "lucide-react"
-import { forwardRef, useState } from "react"
+import { forwardRef } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
@@ -29,31 +29,19 @@ type InstallCommandsMenuProps = ButtonProps & {
 
 export const InstallCommandsMenu = forwardRef<HTMLButtonElement, InstallCommandsMenuProps>(
     ({ uuid, iconOnly = false, menuItem = false, ...props }, ref) => {
-        const [copy, setCopy] = useState(false)
+        const { copied, copyText } = useClipboard()
         const { data: settings } = useSettings()
         const { profile } = useAuth()
 
         const { t } = useTranslation()
 
         const switchState = async (type: number) => {
-            if (!copy) {
-                try {
-                    setCopy(true)
-                    if (!profile) throw new Error("Profile is not found.")
-                    if (!settings?.config) throw new Error("Settings is not found.")
-                    await copyToClipboard(
-                        generateCommand(type, settings!.config, profile, uuid) || "",
-                    )
-                } catch (e: Error | any) {
-                    console.error(e)
-                    toast(t("Error"), {
-                        description: e.message,
-                    })
-                } finally {
-                    setTimeout(() => {
-                        setCopy(false)
-                    }, 2 * 1000)
-                }
+            try {
+                if (!profile) throw new Error("Profile is not found.")
+                if (!settings?.config) throw new Error("Settings is not found.")
+                await copyText(generateCommand(type, settings.config, profile, uuid))
+            } catch (error) {
+                toast(t("Error"), { description: error instanceof Error ? error.message : String(error) })
             }
         }
 
@@ -66,7 +54,7 @@ export const InstallCommandsMenu = forwardRef<HTMLButtonElement, InstallCommands
                             className="flex w-full items-center text-sm px-2 py-2 hover:bg-accent hover:text-accent-foreground"
                             title={i18next.t("InstallCommands")}
                         >
-                            {copy ? (
+                            {copied ? (
                                 <Check className="h-4 w-4 mr-2" />
                             ) : (
                                 <Copy className="h-4 w-4 mr-2" />
@@ -80,7 +68,7 @@ export const InstallCommandsMenu = forwardRef<HTMLButtonElement, InstallCommands
                             size="icon"
                             {...props}
                         >
-                            {copy ? (
+                            {copied ? (
                                 <Check className="h-4 w-4" />
                             ) : (
                                 <Download className="h-4 w-4" />
@@ -88,7 +76,7 @@ export const InstallCommandsMenu = forwardRef<HTMLButtonElement, InstallCommands
                         </Button>
                     ) : (
                         <Button ref={ref} title={i18next.t("InstallCommands")} {...props}>
-                            {copy ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                             <span className="ml-2">{i18next.t("InstallCommands")}</span>
                         </Button>
                     )}

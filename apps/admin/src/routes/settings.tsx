@@ -61,6 +61,10 @@ const settingFormSchema = z.object({
     enable_mcp: asOptionalField(z.boolean()),
 })
 
+const languageOptions = Object.entries(nezhaLang).map(([value, label]) => (
+    <SelectItem key={value} value={value}>{label}</SelectItem>
+))
+
 export default function SettingsPage() {
     const { t, i18n } = useTranslation()
     const { submitting, runSubmit } = useSubmitLock()
@@ -142,9 +146,6 @@ export default function SettingsPage() {
             })
             return
         }
-        if (values.language != i18n.language) {
-            i18n.changeLanguage(values.language)
-        }
         toast(t("Success"))
     })
 
@@ -170,28 +171,25 @@ export default function SettingsPage() {
                                 </FormItem>
                             )}
                         />
+                        <div className="space-y-2">
+                            <Label htmlFor="interface-language">{t("InterfaceLanguage")}</Label>
+                            <Select value={i18n.language} onValueChange={(lng) => void i18n.changeLanguage(lng)}>
+                                <SelectTrigger id="interface-language"><SelectValue /></SelectTrigger>
+                                <SelectContent>{languageOptions}</SelectContent>
+                            </Select>
+                        </div>
                         <FormField
                             control={form.control}
                             name="language"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t("Language")}</FormLabel>
-                                    <FormControl>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {Object.entries(nezhaLang).map(([k, v]) => (
-                                                    <SelectItem key={k} value={k}>
-                                                        {v}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
+                                    <FormLabel>{t("NotificationLanguage")}</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>{languageOptions}</SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -101,7 +101,7 @@ export const UserCard: React.FC<UserCardProps> = ({ mutate }) => {
                                         <FormItem>
                                             <FormLabel>{t("Username")}</FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input autoComplete="off" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

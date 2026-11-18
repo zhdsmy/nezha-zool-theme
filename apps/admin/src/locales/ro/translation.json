@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "Limba interfeței",
+    "NotificationLanguage": "Limba notificărilor",
+    "Retry": "Reîncearcă",
     "nezha": "Monitor-ul Nezha",
     "theme": {
         "light": "Mod luminos",

@@ -103,14 +103,12 @@ export default function ServerPage() {
         },
         {
             header: t("Group"),
-            accessorKey: "groups",
-            accessorFn: (row) => {
-                return (
-                    serverGroups
-                        ?.filter((sg) => sg.servers?.includes(row.id))
-                        .map((sg) => sg.group.id) || []
-                )
-            },
+            id: "groups",
+            cell: ({ row }) =>
+                serverGroups
+                    ?.filter((item) => item.servers?.includes(row.original.id))
+                    .map((item) => item.group.name || `#${item.group.id}`)
+                    .join(", "),
         },
         {
             id: "owner",
@@ -294,7 +292,7 @@ export default function ServerPage() {
                 </HeaderButtonGroup>
             </div>
             <div>
-                <Table>
+                <Table error={data === undefined && error} onRetry={mutate}>
                     <TableHeader className="sticky top-0 bg-card z-10">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>

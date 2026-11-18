@@ -1,4 +1,7 @@
 {
+    "InterfaceLanguage": "Bahasa antarmuka",
+    "NotificationLanguage": "Bahasa notifikasi",
+    "Retry": "Coba lagi",
     "nezha": "Pemantauan Nezha",
     "theme": {
         "light": "Terang",

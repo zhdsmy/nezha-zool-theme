@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { cancelServerTransfer, retryServerTransfer } from "@/api/transfer"
 import { Badge } from "@/components/ui/badge"
@@ -180,7 +181,7 @@ export default function TransferPage() {
         <div className="px-3">
             <h1 className="mt-6 text-2xl font-semibold">{t("Transfer.Title")}</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{t("Transfer.PageHint")}</p>
-            <Table className="mt-6">
+            <Table className="mt-6" error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     <TableRow>
                         <TableHead>ID</TableHead>
@@ -223,7 +224,7 @@ export default function TransferPage() {
                                         {row.last_error || "-"}
                                     </TableCell>
                                     <TableCell>
-                                        {new Date(row.created_at).toLocaleString()}
+                                        {parseTimestamp(row.created_at)?.toLocaleString() ?? "—"}
                                     </TableCell>
                                     <TableCell className="space-x-2">
                                         {isPending &&
