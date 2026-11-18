@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react'
-import { adapter, backfillLive, getLive, getSpark, useStore, useVisibleNodes } from '@/app/store'
+import { adapter, backfillLive, getCounters, getLive, getSpark, useStore, useVisibleNodes } from '@/app/store'
 import { Link, navigate } from '@/app/router'
 import { setShave, useShave } from '@/app/prefs'
 import type { HistoryPoint, NodeInfo, PingData, Snapshot } from '@/core/model'
@@ -161,7 +161,7 @@ function useDaySummary(id: string, snap: Snapshot | undefined) {
   }, [id, nonce])
   const midnight = new Date().setHours(0, 0, 0, 0)
   // Wait for a live snapshot: today's traffic is measured against its counters.
-  const summary = points && points.length && snap ? summariseDay(points, snap, midnight) : null
+  const summary = points && points.length && snap ? summariseDay(points, [...getCounters(id), snap], midnight) : null
   return { summary, refresh: () => setNonce((n) => n + 1) }
 }
 

@@ -1,4 +1,21 @@
-import type { HistoryPoint } from './model'
+import type { HistoryPoint, Snapshot } from './model'
+
+type Counters = Pick<Snapshot, 'at' | 'totalUp' | 'totalDown'>
+
+/** Only the endpoints of a monotonic run affect its total, even after the chart buffer rolls over. */
+export function recordCounters(samples: Counters[], point: Counters, midnight: number) {
+  while (samples.length && samples[0].at < midnight) samples.shift()
+  if (point.at < midnight) return
+  const index = samples.findIndex(p => p.at >= point.at)
+  if (index < 0) samples.push(point)
+  else if (samples[index].at === point.at) samples[index] = point
+  else samples.splice(index, 0, point)
+  for (let i = samples.length - 2; i > 0; i--) {
+    const before = samples[i - 1], current = samples[i], after = samples[i + 1]
+    if (before.totalUp <= current.totalUp && current.totalUp <= after.totalUp &&
+        before.totalDown <= current.totalDown && current.totalDown <= after.totalDown) samples.splice(i, 1)
+  }
+}
 
 export interface DaySummary {
   todayUp: number
@@ -16,7 +33,7 @@ export interface DaySummary {
  */
 export function summariseDay(
   points: HistoryPoint[],
-  now: { totalUp: number; totalDown: number } | undefined,
+  live: readonly Counters[],
   midnight: number,
 ): DaySummary {
   const s: DaySummary = { todayUp: 0, todayDown: 0, peakUp: 0, peakUpAt: 0, peakDown: 0, peakDownAt: 0 }
@@ -32,9 +49,11 @@ export function summariseDay(
   }
   for (const [key, total] of [['totalUp', 'todayUp'], ['totalDown', 'todayDown']] as const) {
     let previous: number | undefined
-    for (const p of [...points.filter(p => p.at >= midnight), ...(now ? [now] : [])]) {
-      const value = p[key]
-      if (value === undefined) continue
+    const readings = new Map<number, number>()
+    for (const p of [...live, ...points]) {
+      if (p.at >= midnight && p[key] !== undefined) readings.set(p.at, p[key]!)
+    }
+    for (const [, value] of [...readings].sort(([a], [b]) => a - b)) {
       if (previous !== undefined) s[total] += value >= previous ? value - previous : value
       previous = value
     }

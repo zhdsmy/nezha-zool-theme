@@ -4,6 +4,7 @@ import type { ActualCost, ConnectionStatus, HistoryPoint, NodeInfo, Session, Sit
 import { DEFAULT_SETTINGS, normalizeSettings, type ThemeSettings } from '@/core/settings'
 import { blindNow, noteFrame, type BlindWindow } from '@/core/live'
 import { cleanSnapshot } from '@/core/condition'
+import { recordCounters } from '@/core/summary'
 import type { ExchangeRates } from '@/core/cost'
 
 export { adapter }
@@ -79,6 +80,9 @@ export function useStore<T>(selector: (s: State) => T): T {
 const LIVE_CAPACITY = 450 // 15 minutes at a 2 s cadence
 const live = new Map<string, HistoryPoint[]>()
 
+const counters = new Map<string, Pick<Snapshot, 'at' | 'totalUp' | 'totalDown'>[]>()
+export const getCounters = (id: string) => counters.get(id) ?? []
+
 export const getLive = (id: string) => live.get(id) ?? []
 
 /** Network-only backfill for the ledger sparks; kept out of `live`, whose points are complete. */
@@ -109,6 +113,9 @@ function pushLive(snapshots: Record<string, Snapshot>) {
   const receivedAt = Date.now()
   for (const [id, s] of Object.entries(snapshots)) {
     if (!s.online) continue
+    const samples = getCounters(id)
+    recordCounters(samples, { at: s.at, totalUp: s.totalUp, totalDown: s.totalDown }, new Date(receivedAt).setHours(0, 0, 0, 0))
+    counters.set(id, samples)
     const buf = live.get(id) ?? []
     // Stamp with our own clock: the instruments plot against Date.now(), and a server whose
     // clock is a minute off would otherwise leave a permanent hole at one end of the window.

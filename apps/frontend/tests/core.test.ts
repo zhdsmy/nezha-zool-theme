@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { daysUntil, formatBytes, formatNumber, monthlyCost, splitSpeed, trafficUsed } from '../src/core/format'
 import { flagToRegion, stripFlag } from '../src/core/region'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../src/core/settings'
-import { spikeLimit, summariseDay } from '../src/core/summary'
+import { recordCounters, spikeLimit, summariseDay } from '../src/core/summary'
 
 describe('format', () => {
   it('formats bytes with sensible precision', () => {
@@ -53,12 +53,24 @@ describe('day summary', () => {
 
   it('uses counter growth since midnight and the highest recorded rates', () => {
     const midnight = 1_000
-    const s = summariseDay([p(500, 9, 1, 100, 200), p(1_000, 3, 7, 150, 260), p(2_000, 5, 2, 400, 300)], { totalUp: 450, totalDown: 360 }, midnight)
+    const s = summariseDay([p(500, 9, 1, 100, 200), p(1_000, 3, 7, 150, 260), p(2_000, 5, 2, 400, 300)], [{ at: 3_000, totalUp: 450, totalDown: 360 }], midnight)
     expect(s).toMatchObject({ todayUp: 300, todayDown: 100, peakUp: 9, peakUpAt: 500, peakDown: 7, peakDownAt: 1_000 })
   })
 
+  it('merges delayed reports by measurement time and retains reset endpoints', () => {
+    const live: { at: number; totalUp: number; totalDown: number }[] = []
+    for (const [at, value] of [[3, 140], [5, 15], [2, 120], [4, 10], [6, 20], [7, 25]]) {
+      recordCounters(live, { at, totalUp: value, totalDown: value }, 1)
+    }
+    expect(live.length).toBeLessThan(6)
+    const summary = summariseDay([p(1, 0, 0, 100, 100), p(3, 0, 0, 150, 140)], live, 1)
+    expect(summary).toMatchObject({ todayUp: 75, todayDown: 65 })
+    recordCounters(live, { at: 8, totalUp: 30, totalDown: 30 }, 8)
+    expect(live.map(p => p.at)).toEqual([8])
+  })
+
   it('includes bytes recorded after a counter reset', () => {
-    const s = summariseDay([p(2_000, 1, 1, 900, 900)], { totalUp: 10, totalDown: 10 }, 1_000)
+    const s = summariseDay([p(2_000, 1, 1, 900, 900)], [{ at: 3_000, totalUp: 10, totalDown: 10 }], 1_000)
     expect(s.todayUp).toBe(10)
     expect(s.todayDown).toBe(10)
   })
