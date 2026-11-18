@@ -54,7 +54,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 {...props}
                 variant={filled ? "default" : variant === "ghost" ? "ghost" : "outline"}
                 className={cn(
-                    "rounded-lg",
+                    "rounded-lg max-sm:min-h-11 max-sm:min-w-11",
                     !filled && variant !== "ghost" && "bg-card",
                     variant === "destructive" &&
                         "hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive",
