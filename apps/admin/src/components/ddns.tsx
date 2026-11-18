@@ -225,7 +225,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         <FormItem>
                                             <FormLabel>{t("Credential")} 2</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Token Secret" {...field} />
+                                                <Input type="password" autoComplete="off" placeholder="Token Secret" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
