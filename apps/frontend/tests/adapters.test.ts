@@ -146,3 +146,7 @@ describe('nezha mergeMetrics', () => {
     expect(pts[0].totalDown).toBeUndefined()
   })
 })
+
+it.each([[' 1 ', 'up'], ['2', 'sum'], ['3', 'max'], ['', 'max']])('maps traffic mode %j to %s', (trafficType, expected) => {
+  expect(parsePublicNote(JSON.stringify({ planDataMod: { trafficType } })).trafficLimitType).toBe(expected)
+})

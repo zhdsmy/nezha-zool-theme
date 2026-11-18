@@ -200,7 +200,8 @@ export function parsePublicNote(note: string | undefined) {
       out.trafficLimit = parseSize(parts[0])
       out.trafficLimitPeriod = out.trafficLimit > 0 ? period : 0
     }
-    out.trafficLimitType = text(p.trafficType) === '2' ? 'sum' : 'max'
+    const mode = text(p.trafficType)
+    out.trafficLimitType = mode === '1' ? 'up' : mode === '2' ? 'sum' : 'max'
     out.bandwidth = text(p.bandwidth)
     out.ipv4 = text(p.IPv4) === '1' ? true : text(p.IPv4) === '0' ? false : undefined
     out.ipv6 = text(p.IPv6) === '1' ? true : text(p.IPv6) === '0' ? false : undefined
