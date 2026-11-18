@@ -34,6 +34,7 @@ describe('Nezha OAuth login', () => {
     view.site = await loadSite(['GitHub', 'Google'])
     expect(view.site.oauth).toBe(true)
     const html = renderToStaticMarkup(createElement(LoginDialog))
+    expect(html.match(/<dialog[^>]+>/)?.[0]).toContain('overflow-y-auto')
     expect(html).toContain('>GitHub</button>')
     expect(html).toContain('>Google</button>')
     expect(html).toContain('autoComplete="username"')
