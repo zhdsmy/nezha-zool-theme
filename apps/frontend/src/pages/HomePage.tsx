@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowDownUp, Check, ChevronDown, LayoutGrid, List, ListTree, Rows2, Rows3 } from 'lucide-react'
-import { adapter, getSpark, useStore, useVisibleNodes } from '@/app/store'
+import { adapter, connectionLabel, getSpark, useStore, useVisibleNodes } from '@/app/store'
 import { setDensity, setGrouping, setView, useDensity, useGrouping, useView } from '@/app/prefs'
 import type { Density, View } from '@/core/settings'
 import type { HistoryPoint, NodeInfo, Snapshot } from '@/core/model'
 import { recentBuckets, type Bucket } from '@/core/live'
 import { currencyCode, formatMoney, formatPercent, ratio, splitBytes, splitSpeed } from '@/core/format'
-import { displayCurrency, onlineMonthlyCost, sharedCurrency } from '@/core/cost'
+import { missingCostHint, displayCurrency, onlineMonthlyCost, sharedCurrency } from '@/core/cost'
 import { setMoneyCurrency, setMoneyPeriod, useMoney, type MoneyPeriod } from '@/app/money'
 import { regionName, stripFlag } from '@/core/region'
 import { Popover } from '@/components/Popover'
@@ -408,13 +408,7 @@ export function HomePage() {
           {/* Until the first frame the dot is neutral whatever the socket is doing: red belongs to a
               connection that was working and dropped. */}
           <StatusDot online={connection === 'open' && fed} pending={!fed} />
-          {connection === 'closed' && fed ? t('status.reconnecting') : connection === 'open' && fed ? t('status.live') : t('status.connecting')}
-          {nodes.length === 0 && (
-            <>
-              <span className="text-faint">/</span>
-              <span className="normal-case tracking-normal">{t('status.noNodes')}</span>
-            </>
-          )}
+          {t(connectionLabel({ connection, fed }))}
         </p>
         {/* The one sentence the page owes a visitor, in the colour of its answer. */}
         {nodes.length > 0 && fed && (
@@ -505,7 +499,7 @@ export function HomePage() {
                     {cost.amount !== null && <span className="ml-1 text-[0.55em] text-muted">{t(yearly ? 'unit.perYear' : 'unit.perMonth')}</span>}
                   </>
                 }
-                sub={cost.amount === null ? t(loggedIn && actualCosts === null ? 'overview.actualCostUnavailable' : rateError ? 'overview.costUnavailable' : 'overview.costLoading') : <>
+                sub={cost.amount === null ? t(missingCostHint(loggedIn && actualCosts === null, rates, rateError)) : <>
                   <span className="block truncate">{t('overview.costNodes', { count: cost.paid })}</span>
                   {rates && <span className="mt-0.5 block truncate text-[10px] text-faint md:mt-1 md:text-[11px]">
                     {t(rates.stale ? 'overview.costCachedRates' : 'overview.costRates')}{' '}
@@ -747,7 +741,7 @@ export function HomePage() {
           last known values, not a fleet that went offline. */}
       <section className="mt-2 md:mt-4" data-stale={fed && connection !== 'open' ? '' : undefined}>
         {shown === 0 ? (
-          <p className="rounded-[20px] border border-dashed border-line py-16 text-center text-[14px] text-muted">{t('toolbar.empty')}</p>
+          <p className="rounded-[20px] border border-dashed border-line py-16 text-center text-[14px] text-muted">{t(nodes.length ? 'toolbar.empty' : 'status.noNodes')}</p>
         ) : (
           <>
             {view !== 'cards' && <StripHead />}

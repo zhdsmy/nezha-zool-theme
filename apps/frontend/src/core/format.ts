@@ -10,9 +10,9 @@ export interface Parts {
 /** Binary (1024) byte formatting, split so the unit can be styled on its own. */
 export function splitBytes(bytes: number, digits?: number): Parts {
   if (!Number.isFinite(bytes) || bytes <= 0) return { value: '0', unit: 'B' }
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), BYTE_UNITS.length - 1)
+  const i = Math.min(Math.floor(Math.log(Math.max(1, bytes)) / Math.log(1024)), BYTE_UNITS.length - 1)
   const v = bytes / 1024 ** i
-  const d = digits ?? (i === 0 || v >= 100 ? 0 : v >= 10 ? 1 : 2)
+  const d = digits ?? (v < 1 ? 2 : i === 0 || v >= 100 ? 0 : v >= 10 ? 1 : 2)
   return { value: v.toFixed(d), unit: BYTE_UNITS[i] }
 }
 
@@ -42,6 +42,10 @@ export const formatNumber = (n: number, digits = 2) => {
   const s = n.toFixed(digits)
   return digits > 0 ? s.replace(/\.?0+$/, '') : s
 }
+
+/** Retain meaningful sub-millisecond readings on latency axes and legends. */
+export const formatLatency = (ms: number) =>
+  `${ms > 0 && ms < 1 ? Number(ms.toPrecision(2)) : formatNumber(ms, ms < 10 ? 1 : 0)} ms`
 
 export interface Duration {
   days: number
@@ -103,7 +107,7 @@ export function formatClock(at: number, withDate = false, locale?: string) {
 
 export function currencyCode(currency: string): string | null {
   const code = currency.trim().toUpperCase()
-  return ({ '$': 'USD', 'US$': 'USD', '¥': 'CNY', '￥': 'CNY', RMB: 'CNY', '€': 'EUR', 'AUD$': 'AUD', 'A$': 'AUD' } as Record<string, string>)[code]
+  return ({ '$': 'USD', 'US$': 'USD', '¥': 'CNY', '￥': 'CNY', RMB: 'CNY', 元: 'CNY', '€': 'EUR', 'AUD$': 'AUD', 'A$': 'AUD', '£': 'GBP', '₽': 'RUB', 'NT$': 'TWD', 'S$': 'SGD', '₩': 'KRW', 'C$': 'CAD', C: 'CAD', 'HK$': 'HKD', 'JP¥': 'JPY' } as Record<string, string>)[code]
     ?? (/^[A-Z]{3}$/.test(code) ? code : null)
 }
 

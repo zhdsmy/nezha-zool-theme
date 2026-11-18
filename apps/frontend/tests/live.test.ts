@@ -197,3 +197,9 @@ describe('memoryBlocks', () => {
     expect(memoryBlocks(1 * GB, 8 * GB).swapBlocks).toBe(0)
   })
 })
+
+it('does not count missing metric values as zero samples', () => {
+  const points = [NaN, 0, NaN, 10].map((cpu, at) => ({ at, cpu }) as HistoryPoint)
+  expect(bucketSeries(points, p => p.cpu, 2, 0, 4).map(b => b.value)).toEqual([0, 10])
+  expect(bucketSeries(points.slice(0, 1), p => p.cpu, 1, 0, 4)[0].value).toBeNull()
+})

@@ -630,14 +630,17 @@
   }
 }
 
-/* Keep touch targets at or above 40px without changing mouse layouts. */
+/* Reserve finger-sized targets for touch input. */
 @media (pointer: coarse) {
+  .field {
+    font-size: 16px;
+  }
   header .icon-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   header .btn-outline {
-    min-height: 40px;
+    min-height: 44px;
   }
   .home-toolbar button {
     min-height: 40px;
@@ -948,12 +951,6 @@
   .node-info-row[data-wide] {
     grid-column: 1 / -1;
   }
-  .node-info-dd {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    overflow-wrap: anywhere;
-  }
   .node-peak-vals {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1070,10 +1067,13 @@
   }
 }
 
-@media (pointer: coarse) and (width < 768px) {
+@media (pointer: coarse) {
   .node-tabs > button,
-  .node-ranges > .pill {
-    min-height: 40px;
+  .node-ranges > .pill,
+  .node-ping-list button,
+  .node-charts-bar > button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
@@ -1092,11 +1092,6 @@
 @media (768px <= width < 1024px) {
   .node-info-grid {
     align-items: start;
-  }
-  .node-info-dd {
-    white-space: normal;
-    text-overflow: clip;
-    overflow-wrap: break-word;
   }
 }
 /* A 910px foldable screen cannot spare 48px a side: the cards need it more. */

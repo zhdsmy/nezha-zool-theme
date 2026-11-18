@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react'
-import { adapter, backfillLive, getLive, getSpark, useStore, useVisibleNodes } from '@/app/store'
+import { adapter, backfillLive, getCounters, getLive, getSpark, useStore, useVisibleNodes } from '@/app/store'
 import { Link, navigate } from '@/app/router'
 import { setShave, useShave } from '@/app/prefs'
 import type { HistoryPoint, NodeInfo, PingData, Snapshot } from '@/core/model'
-import { formatBytes, formatClock, formatNumber, formatPercent, formatSpeed, quotaUsage, ratio } from '@/core/format'
+import { formatBytes, formatClock, formatLatency, formatNumber, formatPercent, formatSpeed, quotaUsage, ratio } from '@/core/format'
 import { regionName, stripFlag } from '@/core/region'
+import { watchDay } from '@/app/day'
 import { summariseDay, spikeLimit } from '@/core/summary'
 import { Chart, type ChartSeries } from '@/components/Chart'
 import { HourGrid } from '@/components/HourGrid'
@@ -68,7 +69,7 @@ function InfoList({ title, rows }: { title: string; rows: InfoRow[] }) {
             className="node-info-row flex items-baseline justify-between gap-6 border-b border-line py-3 text-[14px] md:gap-3 md:py-1.5 md:text-[13px] lg:gap-6 lg:py-3 lg:text-[14px]"
           >
             <dt className="node-info-dt shrink-0 text-muted">{k}</dt>
-            <dd className="node-info-dd min-w-0 truncate text-right" title={typeof v === 'string' ? v : undefined}>
+            <dd className="node-info-dd min-w-0 wrap-anywhere text-right" title={typeof v === 'string' ? v : undefined}>
               {v}
             </dd>
           </div>
@@ -133,35 +134,37 @@ function useWeekHistory(id: string) {
   const [points, setPoints] = useState<HistoryPoint[] | null>(null)
   useEffect(() => {
     if (!supported) return
-    let cancelled = false
+    const ctrl = new AbortController()
     adapter
-      .loadHistory(id, 168)
-      .then((p) => !cancelled && setPoints(p))
-      .catch(() => !cancelled && setPoints([]))
-    return () => {
-      cancelled = true
-    }
+      .loadHistory(id, 168, ctrl.signal)
+      .then((p) => !ctrl.signal.aborted && setPoints(p))
+      .catch(() => !ctrl.signal.aborted && setPoints([]))
+    return () => ctrl.abort()
   }, [id, supported])
   return supported ? points : null
 }
 
 function useDaySummary(id: string, snap: Snapshot | undefined) {
-  const [points, setPoints] = useState<HistoryPoint[] | null>(null)
+  const supported = useStore(s => Boolean(s.site?.recordHours)) && adapter.capabilities.history
+  const midnight = new Date().setHours(0, 0, 0, 0)
+  const [result, setResult] = useState<{ id: string; day: number; points: HistoryPoint[] } | null>(null)
+  const points = result?.id === id && result.day === midnight ? result.points : null
   const [nonce, setNonce] = useState(0)
   useEffect(() => {
-    if (!adapter.capabilities.history) return
-    let cancelled = false
-    adapter
-      .loadHistory(id, 24)
-      .then((p) => !cancelled && setPoints(p))
-      .catch(() => !cancelled && setPoints([]))
-    return () => {
-      cancelled = true
-    }
-  }, [id, nonce])
-  const midnight = new Date().setHours(0, 0, 0, 0)
+    if (!supported) return
+    let current: AbortController
+    const stop = watchDay(day => {
+      current?.abort()
+      current = new AbortController()
+      const { signal } = current
+      adapter.loadHistory(id, 24, signal).then(points => {
+        if (!signal.aborted) setResult({ id, day, points })
+      }).catch(() => {})
+    })
+    return () => { stop(); current?.abort() }
+  }, [id, nonce, supported])
   // Wait for a live snapshot: today's traffic is measured against its counters.
-  const summary = points && points.length && snap ? summariseDay(points, snap, midnight) : null
+  const summary = points && points.length && snap ? summariseDay(points, [...getCounters(id), snap], midnight) : null
   return { summary, refresh: () => setNonce((n) => n + 1) }
 }
 
@@ -187,9 +190,9 @@ function useTimeFormats(hours: number) {
 function ChartCard({ title, value, children }: { title: string; value?: ReactNode; children: ReactNode }) {
   return (
     <div className="node-chart-card card p-5 md:px-3.5 md:py-3 lg:p-5">
-      <div className="node-chart-head mb-3 md:mb-1.5 lg:mb-3 flex items-baseline justify-between gap-3">
+      <div className="node-chart-head flex-wrap mb-3 md:mb-1.5 lg:mb-3 flex items-baseline justify-between gap-3">
         <h3 className="shrink-0 text-[13px] text-muted md:text-[12px] lg:text-[13px]">{title}</h3>
-        {value && <p className="num truncate text-[13px] md:text-[12px] lg:text-[13px]">{value}</p>}
+        {value && <p className="num min-w-0 text-[13px] md:text-[12px] lg:text-[13px]">{value}</p>}
       </div>
       {children}
     </div>
@@ -210,17 +213,24 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
     label,
     color,
     area,
-    points: points.map((p) => ({ t: p.at, v: pick(p) })),
+    points: points.map((p) => {
+      const value = pick(p)
+      return { t: p.at, v: Number.isFinite(value) ? value : null }
+    }),
   })
   const common = { height, formatTime: fmt.axis, formatTooltipTime: fmt.tooltip }
   const last = points[points.length - 1]
+  const reading = (v: number, format: (value: number) => string = String) => Number.isFinite(v) ? format(v) : '—'
 
   return (
     <div className="node-chart-grid grid gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3">
-      <ChartCard title={t('metric.cpu')} value={last ? `${formatPercent(last.cpu)}%` : undefined}>
+      <ChartCard title={t('metric.cpu')} value={last ? reading(last.cpu, v => `${formatPercent(v)}%`) : undefined}>
         <Chart {...common} label={t('metric.cpu')} yMax={100} format={(v) => `${formatNumber(v, 0)}%`} series={[s('cpu', t('metric.cpu'), 'var(--chart-1)', (p) => p.cpu, true)]} />
       </ChartCard>
-      <ChartCard title={t('metric.memory')} value={last ? `${formatBytes(last.memUsed)} / ${formatBytes(memTotal)}` : undefined}>
+      <ChartCard title={t('metric.memory')} value={last && (node.swapTotal ? <>
+        <SeriesDot color="var(--chart-2)" />{reading(last.memUsed, formatBytes)} / {formatBytes(memTotal)} ·{' '}
+        <SeriesDot color="var(--chart-3)" />{t('metric.swap')} {reading(last.swapUsed, formatBytes)}
+      </> : `${reading(last.memUsed, formatBytes)} / ${formatBytes(memTotal)}`)}>
         <Chart
           {...common}
           label={t('metric.memory')}
@@ -229,7 +239,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
           series={[s('mem', t('metric.memory'), 'var(--chart-2)', (p) => p.memUsed, true), ...(node.swapTotal ? [s('swap', t('metric.swap'), 'var(--chart-3)', (p) => p.swapUsed)] : [])]}
         />
       </ChartCard>
-      <ChartCard title={t('metric.disk')} value={last ? `${formatBytes(last.diskUsed)} / ${formatBytes(diskTotal)}` : undefined}>
+      <ChartCard title={t('metric.disk')} value={last ? `${reading(last.diskUsed, formatBytes)} / ${formatBytes(diskTotal)}` : undefined}>
         <Chart {...common} label={t('metric.disk')} yMax={diskTotal || undefined} format={(v) => formatBytes(v, 0)} series={[s('disk', t('metric.disk'), 'var(--chart-3)', (p) => p.diskUsed, true)]} />
       </ChartCard>
       <ChartCard
@@ -237,7 +247,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
         value={
           last ? (
             <>
-              <SeriesDot color="var(--chart-1)" />↑ {formatSpeed(last.netUp)} · <SeriesDot color="var(--chart-2)" />↓ {formatSpeed(last.netDown)}
+              <SeriesDot color="var(--chart-1)" />↑ {reading(last.netUp, formatSpeed)} · <SeriesDot color="var(--chart-2)" />↓ {reading(last.netDown, formatSpeed)}
             </>
           ) : undefined
         }
@@ -254,7 +264,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
         value={
           last ? (
             <>
-              <SeriesDot color="var(--chart-1)" />TCP {last.tcp} · <SeriesDot color="var(--chart-4)" />UDP {last.udp}
+              <SeriesDot color="var(--chart-1)" />TCP {reading(last.tcp)} · <SeriesDot color="var(--chart-4)" />UDP {reading(last.udp)}
             </>
           ) : undefined
         }
@@ -266,13 +276,17 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
           series={[s('tcp', t('metric.tcp'), 'var(--chart-1)', (p) => p.tcp, true), s('udp', t('metric.udp'), 'var(--chart-4)', (p) => p.udp)]}
         />
       </ChartCard>
-      <ChartCard title={`${t('metric.load')} · ${t('metric.process')}`} value={last ? `${formatNumber(last.load1)} · ${last.process}` : undefined}>
+      <ChartCard title={t('metric.load')} value={last && reading(last.load1, formatNumber)}>
         <Chart
           {...common}
           label={t('metric.load')}
           format={(v) => formatNumber(v, v > 0 && v < 1 && Math.round(v * 100) % 10 !== 0 ? 2 : 1)}
           series={[s('load', t('metric.load'), 'var(--chart-2)', (p) => p.load1, true)]}
         />
+      </ChartCard>
+      <ChartCard title={t('metric.process')} value={last && reading(last.process)}>
+        <Chart {...common} label={t('metric.process')} format={(v) => formatNumber(v, 0)}
+          series={[s('process', t('metric.process'), 'var(--chart-4)', p => p.process, true)]} />
       </ChartCard>
     </div>
   )
@@ -315,7 +329,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
         height={height}
         robust
         focus={focus !== null && visible(focus) ? String(focus) : null}
-        format={(v) => `${formatNumber(v, 0)} ms`}
+        format={formatLatency}
         formatTime={fmt.axis}
         formatTooltipTime={fmt.tooltip}
         label={t('node.tabPing')}
@@ -329,27 +343,27 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
             aria-pressed={visible(task.id)}
             onClick={() => toggle(task.id)}
             onPointerEnter={(e) => e.pointerType === 'mouse' && setFocus(task.id)}
-            title={`${task.name} · ${t('node.min')} ${formatNumber(task.min, 0)} · ${t('node.max')} ${formatNumber(task.max, 0)} ms`}
-            className={`node-ping-row inline-flex max-w-full min-h-7 items-center gap-1.5 rounded-full px-1.5 text-[12px] transition-opacity hover:bg-surface-2 ${visible(task.id) ? '' : 'opacity-40'}`}
+            title={`${task.name} · ${t('node.min')} ${formatLatency(task.min)} · ${t('node.max')} ${formatLatency(task.max)}`}
+            className={`node-ping-row inline-flex max-w-full min-h-8 items-center gap-1.5 rounded-full px-1.5 text-[12px] transition-opacity hover:bg-surface-2 ${visible(task.id) ? '' : 'opacity-40'}`}
           >
             <span
               className="size-2 shrink-0 rounded-full"
               style={visible(task.id) ? { background: color(i) } : { boxShadow: `inset 0 0 0 1.5px ${color(i)}` }}
             />
             <span className="truncate">{task.name}</span>
-            <span className="num text-muted">{formatNumber(task.avg, task.avg < 10 ? 1 : 0)}</span>
+            <span className="num text-muted">{formatLatency(task.avg)}</span>
           </button>
         ))}
         {shown !== null && (
-          <button type="button" className="min-h-7 rounded-full px-1.5 text-[12px] text-accent-text hover:bg-surface-2" onClick={() => setShown(null)}>
+          <button type="button" className="min-h-8 rounded-full px-1.5 text-[12px] text-accent-text hover:bg-surface-2" onClick={() => setShown(null)}>
             {t('node.showAllLines')}
           </button>
         )}
       </div>
       {solo && (
         <p className="node-ping-detail num mt-1 text-[12px] text-muted">
-          {t('node.avg')} <span className="text-ink">{formatNumber(solo.avg, 1)} ms</span> · {t('node.min')} {formatNumber(solo.min, 0)} · {t('node.max')}{' '}
-          {formatNumber(solo.max, 0)}
+          {t('node.avg')} <span className="text-ink">{formatLatency(solo.avg)}</span> · {t('node.min')} {formatLatency(solo.min)} · {t('node.max')}{' '}
+          {formatLatency(solo.max)}
           {solo.loss !== undefined && (
             <span className={solo.loss > 5 ? 'text-danger' : ''}>
               {' '}
@@ -385,28 +399,24 @@ function NodeCharts({ node, snap }: { node: NodeInfo; snap?: Snapshot }) {
 
   useEffect(() => {
     if (tab !== 'load' || range === 0) return
-    let cancelled = false
+    const ctrl = new AbortController()
     setError(false)
     adapter
-      .loadHistory(node.id, range)
-      .then((points) => !cancelled && setHistory({ key: historyKey, points }))
-      .catch(() => !cancelled && setError(true))
-    return () => {
-      cancelled = true
-    }
+      .loadHistory(node.id, range, ctrl.signal)
+      .then((points) => !ctrl.signal.aborted && setHistory({ key: historyKey, points }))
+      .catch(() => !ctrl.signal.aborted && setError(true))
+    return () => ctrl.abort()
   }, [tab, range, node.id, historyKey])
 
   useEffect(() => {
     if (tab !== 'ping' || !adapter.capabilities.ping) return
-    let cancelled = false
+    const ctrl = new AbortController()
     setError(false)
     adapter
-      .loadPing(node.id, pingRange)
-      .then((data) => !cancelled && setPing({ key: pingKey, data }))
-      .catch(() => !cancelled && setError(true))
-    return () => {
-      cancelled = true
-    }
+      .loadPing(node.id, pingRange, ctrl.signal)
+      .then((data) => !ctrl.signal.aborted && setPing({ key: pingKey, data }))
+      .catch(() => !ctrl.signal.aborted && setError(true))
+    return () => ctrl.abort()
   }, [tab, pingRange, node.id, pingKey])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -539,7 +549,9 @@ export function NodePage({ id }: { id: string }) {
   }, [nodeId, liveTick])
 
   useEffect(() => {
-    void backfillLive(nodeId)
+    const ctrl = new AbortController()
+    void backfillLive(nodeId, ctrl.signal)
+    return () => ctrl.abort()
   }, [nodeId])
 
   useEffect(() => {
@@ -717,7 +729,7 @@ export function NodePage({ id }: { id: string }) {
             [t('node.networkRoute'), node.networkRoute, true],
             [
               t('node.today'),
-              day.summary ? (
+              day.summary && day.summary.todayUp !== null && day.summary.todayDown !== null ? (
                 <span key="t" className="inline-flex items-center gap-2">
                   <span className="num">
                     ↑ {formatBytes(day.summary.todayUp)} · ↓ {formatBytes(day.summary.todayDown)}
@@ -801,7 +813,7 @@ export function NodePage({ id }: { id: string }) {
         </div>
       )}
 
-      {node.note && <p className="node-note mt-10 max-w-[70ch] text-[14px] leading-relaxed whitespace-pre-line text-muted">{node.note}</p>}
+      {node.note && <p className="node-note mt-10 max-w-[70ch] wrap-anywhere text-[14px] leading-relaxed whitespace-pre-line text-muted">{node.note}</p>}
 
       <NodeCharts key={node.id} node={node} snap={snap} />
     </div>

@@ -11,6 +11,7 @@ import type {
   SiteInfo,
   Snapshot,
 } from '@/core/model'
+import { currencyCode } from '@/core/format'
 import { flagToRegion } from '@/core/region'
 
 /* ---------- API shapes (Nezha dashboard v1, tested on v2.0.13) ---------- */
@@ -120,29 +121,41 @@ export function parseActualCost(note: unknown): ActualCost | undefined {
   if (typeof note !== 'string') return
   try {
     const amount = text(JSON.parse(note)?.billingDataMod?.actualAmount)
-    const match = /^([A-Z]{3})\s+(\d+(?:\.\d+)?)$/i.exec(amount)
-    if (match && Number.isFinite(Number(match[2]))) {
-      return { currency: match[1].toUpperCase(), amount: Number(match[2]) }
-    }
+    const match = /^([^\d\s.,+-]*)\s*(\d+(?:\.\d+)?)\s*([^\d\s.,+-]*)$/.exec(amount)
+    if (!match || (match[1] && match[3])) return
+    const currency = currencyCode(match[1] || match[3])
+    if (currency && Number.isFinite(Number(match[2]))) return { currency, amount: Number(match[2]) }
   } catch {
     /* Empty, plain-text or malformed private notes keep the displayed price. */
   }
 }
 
 const CYCLES: [RegExp, number][] = [
-  [/^(月|mo|month|monthly|m)$/i, 30],
-  [/^(季|季度|q|quarter|quarterly)$/i, 90],
-  [/^(半年|half|semi|semiannual|h)$/i, 182],
-  [/^(年|y|yr|year|yearly|annual|annually)$/i, 365],
-  [/^(两年|二年|2y|biennial)$/i, 730],
-  [/^(三年|3y|triennial)$/i, 1095],
+  [/^(d|days?|daily|天|日|日間|每天|每日|毎日)$/i, 1],
+  [/^(w|wk|weeks?|weekly|周|週|週間|每周|每週|毎週)$/i, 7],
+  [/^(m|mo|months?|monthly|月|个月|個月|か月|ヶ月|箇月|每月|毎月)$/i, 30],
+  [/^(q|qr|quarter|quarterly|季|季度)$/i, 90],
+  [/^(h|half|half-?year|semi|semi-?annual(?:ly)?|半|半年)$/i, 182],
+  [/^(y|yr|years?|yearly|annual|annually|年|年間|每年|毎年)$/i, 365],
+  [/^(两年|兩年|二年|biennial)$/i, 730],
+  [/^(三年|triennial)$/i, 1095],
 ]
+
+function cycleDays(value: string) {
+  const match = /^(\d+)?([^\d]+)$/.exec(value.replace(/\s/g, ''))
+  if (!match) return
+  const unit = CYCLES.find(([re]) => re.test(match[2]))?.[1]
+  const count = Number(match[1] ?? 1)
+  if (!unit || count < 1 || !Number.isSafeInteger(count * unit)) return
+  if (unit === 30 && count === 6) return 182
+  return unit === 30 && count % 12 === 0 ? count / 12 * 365 : count * unit
+}
 
 const SIZE = /^(\d+(?:\.\d+)?)\s*([KMGTP]?)i?B?$/i
 const text = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 
 function parseSize(v = ''): number {
-  if (/^(unlimited|unmetered|不限|无限(?:流量)?)$/i.test(v.trim())) return 0
+  if (/^(unlimited|unmetered|不限|[无無]限(?:流量)?)$/i.test(v.trim())) return 0
   const m = SIZE.exec(v.trim())
   if (!m) return -1
   const pow = ' KMGTP'.indexOf((m[2] || ' ').toUpperCase())
@@ -175,10 +188,12 @@ export function parsePublicNote(note: string | undefined) {
   }
   const b = parsed.billingDataMod
   if (b) {
-    const amount = text(b.amount)
+    const [raw, period, ...rest] = text(b.amount).split('/')
+    const embedded = period === undefined ? undefined : cycleDays(period)
+    const amount = rest.length || (period !== undefined && !embedded) ? '' : raw.trim().replace(/(\d),(?=\d{3}(?:\D|$))/g, '$1')
     const num = /-?\d+(?:\.\d+)?/.exec(amount)
     if (amount === '-1') out.price = -2
-    else if (amount === '0' || /free|免费/i.test(amount)) out.price = -1
+    else if (amount === '0' || /free|免费|免費/i.test(amount)) out.price = -1
     else if (num) {
       const price = Number(num[0])
       if (Number.isFinite(price) && price > 0) {
@@ -186,21 +201,22 @@ export function parsePublicNote(note: string | undefined) {
         out.currency = amount.replace(num[0], '').trim().slice(0, 4) || '$'
       }
     }
-    out.billingCycle = CYCLES.find(([re]) => re.test(text(b.cycle)))?.[1] ?? 0
+    out.billingCycle = (text(b.cycle) ? cycleDays(text(b.cycle)) : embedded) ?? 0
     out.autoRenewal = text(b.autoRenewal) === '1'
     const endDate = text(b.endDate)
-    const end = Date.parse(endDate)
+    const end = Date.parse(endDate.replace(/^(\d{4}-\d\d-\d\d) /, '$1T'))
     out.expiredAt = endDate.startsWith('0000-00-00') ? 0 : Number.isFinite(end) && new Date(end).getUTCFullYear() > 2000 ? end : null
   }
   const p = parsed.planDataMod
   if (p) {
     const parts = text(p.trafficVol).split('/')
-    const period = parts.length === 2 ? CYCLES.find(([re]) => re.test(parts[1].trim()))?.[1] : 0
+    const period = parts.length === 2 ? cycleDays(parts[1]) : 0
     if (parts.length <= 2 && period !== undefined) {
       out.trafficLimit = parseSize(parts[0])
       out.trafficLimitPeriod = out.trafficLimit > 0 ? period : 0
     }
-    out.trafficLimitType = text(p.trafficType) === '2' ? 'sum' : 'max'
+    const mode = text(p.trafficType)
+    out.trafficLimitType = mode === '1' ? 'up' : mode === '2' ? 'sum' : 'max'
     out.bandwidth = text(p.bandwidth)
     out.ipv4 = text(p.IPv4) === '1' ? true : text(p.IPv4) === '0' ? false : undefined
     out.ipv6 = text(p.IPv6) === '1' ? true : text(p.IPv6) === '0' ? false : undefined
@@ -319,7 +335,7 @@ export function mapFrame(
   const nodes: NodeInfo[] = []
   for (const s of servers) {
     const id = String(s.id)
-    if (s.public_note) notes.set(id, s.public_note)
+    if (s.public_note !== undefined) notes.set(id, s.public_note)
     snapshots[id] = mapState(s, now)
     nodes.push(mapServer(s, groups, notes.get(id)))
   }
@@ -341,16 +357,23 @@ const hub = (() => {
     if (socket) return
     socket = resilientSocket({
       url: () => wsUrl('/api/v1/ws/server'),
+      onOpen: () => {
+        last = null
+        publicNotes.clear()
+      },
       onStatus: (s) => {
         status = s
         statusListeners.forEach((l) => l(s))
       },
       onMessage: (text) => {
         try {
-          last = JSON.parse(text) as NezhaFrame
-          listeners.forEach((l) => l(last!))
+          const frame = JSON.parse(text) as NezhaFrame
+          if (!Number.isFinite(frame?.now) || (frame.servers !== undefined && !Array.isArray(frame.servers))) return false
+          last = frame
+          listeners.forEach((l) => l(frame))
+          return true
         } catch {
-          /* ignore */
+          return false
         }
       },
     })
@@ -378,6 +401,7 @@ const hub = (() => {
     reset() {
       socket?.close()
       socket = null
+      publicNotes.clear()
       last = null
       status = 'connecting'
     },
@@ -401,10 +425,19 @@ const hub = (() => {
 // Module-level so socket frames replayed synchronously on subscribe already see the groups.
 let groupsCache = new Map<number, string[]>()
 let groupsPromise: Promise<Map<number, string[]>> | null = null
-const loadGroups = () =>
-  (groupsPromise ??= request<Common<NezhaGroup[]>>('/api/v1/server-group')
-    .then((r) => (groupsCache = groupIndex(r.data ?? [])))
-    .catch(() => groupsCache))
+function loadGroups() {
+  if (groupsPromise) return groupsPromise
+  const pending = request<Common<NezhaGroup[]>>('/api/v1/server-group').then(r => {
+    if (!r.success) throw new Error('Nezha groups unavailable')
+    const groups = groupIndex(r.data ?? [])
+    if (groupsPromise === pending) groupsCache = groups
+    return groups
+  }).catch(error => {
+    if (groupsPromise === pending) groupsPromise = null
+    throw error
+  })
+  return (groupsPromise = pending)
+}
 
 const FIRST_FRAME_TIMEOUT_MS = 15_000
 
@@ -440,7 +473,7 @@ export function mergeMetrics(series: Partial<Record<keyof typeof METRICS, NezhaM
       if (ts < since || !Number.isFinite(value)) continue
       let point = byTs.get(ts)
       if (!point) {
-        point = { at: ts, cpu: 0, memUsed: 0, swapUsed: 0, diskUsed: 0, netUp: 0, netDown: 0, load1: 0, tcp: 0, udp: 0, process: 0 }
+        point = { at: ts, cpu: NaN, memUsed: NaN, swapUsed: NaN, diskUsed: NaN, netUp: NaN, netDown: NaN, load1: NaN, tcp: NaN, udp: NaN, process: NaN }
         byTs.set(ts, point)
       }
       ;(point as unknown as Record<string, number>)[field] = value
@@ -451,7 +484,13 @@ export function mergeMetrics(series: Partial<Record<keyof typeof METRICS, NezhaM
 
 /* ---------- adapter ---------- */
 
-export const nezha: MonitorAdapter = {
+interface NezhaAdapter extends MonitorAdapter {
+  loadHistory(id: string, hours: number, signal?: AbortSignal): Promise<HistoryPoint[]>
+  loadRecent(id: string, minutes: number, signal?: AbortSignal): Promise<HistoryPoint[]>
+  loadPing(id: string, hours: number, signal?: AbortSignal): Promise<PingData>
+}
+
+export const nezha: NezhaAdapter = {
   target: 'nezha',
   capabilities: { billing: true, trafficLimit: true, history: true, ping: true },
   adminUrl: '/dashboard',
@@ -461,10 +500,11 @@ export const nezha: MonitorAdapter = {
 
   async loadSite(): Promise<SiteInfo> {
     const [res, loggedIn] = await Promise.all([
-      request<Common<NezhaSetting>>('/api/v1/setting').catch(() => null),
+      request<Common<NezhaSetting>>('/api/v1/setting'),
       request<Common<unknown>>('/api/v1/profile').then((r) => r.success, () => false),
     ])
-    const cfg = res?.data?.config ?? {}
+    if (!res?.success || !res.data) throw new Error('Nezha settings unavailable')
+    const cfg = res.data.config ?? {}
     const oauthProviders = (cfg.oauth2_providers ?? []).filter((provider) => typeof provider === 'string' && provider.trim())
     return {
       name: (cfg.site_name ?? '').trim() || 'Nezha',
@@ -505,31 +545,33 @@ export const nezha: MonitorAdapter = {
   },
 
   subscribe(listener, onStatus) {
-    loadGroups()
+    void loadGroups().catch(() => {})
     return hub.listen((frame) => listener(mapFrame(frame, groupsCache)), onStatus)
   },
 
   reset() {
     hub.reset()
     groupsPromise = null
+    groupsCache = new Map()
   },
 
-  async loadHistory(id, hours) {
+  async loadHistory(id, hours, signal) {
     const base = `/api/v1/server/${encodeURIComponent(id)}/metrics?period=${period(hours)}&metric=`
     const names = Object.keys(METRICS) as (keyof typeof METRICS)[]
-    const results = await Promise.all(names.map((m) => request<Common<NezhaMetricSeries>>(base + m, {}, 60_000).catch(() => null)))
+    const results = await Promise.all(names.map((m) => request<Common<NezhaMetricSeries>>(base + m, { signal }, 60_000).catch(() => null)))
+    signal?.throwIfAborted()
     if (!results[0]?.success) throw new Error('Nezha history unavailable')
     return mergeMetrics(Object.fromEntries(names.map((m, i) => [m, results[i]?.data])), Date.now() - hours * 3_600_000)
   },
 
-  async loadRecent(id, minutes) {
+  async loadRecent(id, minutes, signal) {
     const base = `/api/v1/server/${encodeURIComponent(id)}/metrics?period=1d&metric=`
-    const [up, down] = await Promise.all([request<Common<NezhaMetricSeries>>(base + 'net_out_speed'), request<Common<NezhaMetricSeries>>(base + 'net_in_speed')])
+    const [up, down] = await Promise.all([request<Common<NezhaMetricSeries>>(base + 'net_out_speed', { signal }), request<Common<NezhaMetricSeries>>(base + 'net_in_speed', { signal })])
     return mergeMetrics({ net_out_speed: up.data, net_in_speed: down.data }, Date.now() - minutes * 60_000)
   },
 
-  async loadPing(id, hours): Promise<PingData> {
-    const res = await request<Common<NezhaServiceInfo[]>>(`/api/v1/server/${encodeURIComponent(id)}/service?period=${period(hours)}`)
+  async loadPing(id, hours, signal): Promise<PingData> {
+    const res = await request<Common<NezhaServiceInfo[]>>(`/api/v1/server/${encodeURIComponent(id)}/service?period=${period(hours)}`, { signal })
     return mapServices(res.data ?? [], Date.now() - hours * 3_600_000)
   },
 

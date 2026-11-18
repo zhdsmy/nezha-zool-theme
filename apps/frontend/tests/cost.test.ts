@@ -115,3 +115,10 @@ describe('exchange rates', () => {
       await expect(loadExchangeRates()).rejects.toThrow(/exchange rates/)
     })
 })
+
+it('distinguishes an absent quote in a finished response from a pending request', async () => {
+  const { missingCostHint } = await import('../src/core/cost')
+  expect(missingCostHint(false, null, false)).toBe('overview.costLoading')
+  expect(missingCostHint(false, { date: '2026-11-18', rates: { USD: 1 } }, false)).toBe('overview.costUnavailable')
+  expect(missingCostHint(true, null, false)).toBe('overview.actualCostUnavailable')
+})

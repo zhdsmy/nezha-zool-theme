@@ -58,7 +58,7 @@ function SearchPanel() {
           aria-expanded="true"
           aria-controls="search-results"
           aria-activedescendant={results[active] ? `search-option-${active}` : undefined}
-          className="h-full flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted"
+          className="h-full min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-muted"
         />
         <kbd className="rounded-[6px] border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-muted">Esc</kbd>
       </div>

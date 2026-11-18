@@ -4,6 +4,7 @@ import type { ActualCost, ConnectionStatus, HistoryPoint, NodeInfo, Session, Sit
 import { DEFAULT_SETTINGS, normalizeSettings, type ThemeSettings } from '@/core/settings'
 import { blindNow, noteFrame, type BlindWindow } from '@/core/live'
 import { cleanSnapshot } from '@/core/condition'
+import { recordCounters } from '@/core/summary'
 import type { ExchangeRates } from '@/core/cost'
 
 export { adapter }
@@ -56,6 +57,11 @@ function set(patch: Partial<State>) {
 }
 
 export const getState = () => state
+export const connectionLabel = ({ connection, fed }: Pick<State, 'connection' | 'fed'>) =>
+  !fed ? 'status.connecting' : connection === 'open' ? 'status.live' : 'status.reconnecting'
+
+export const needsExchangeRates = ({ phase, settings }: Pick<State, 'phase' | 'settings'>) =>
+  phase === 'ready' && (settings.showCost || settings.showBilling)
 
 export function setExchangeRates(exchangeRates: ExchangeRates | null, exchangeRateError = false) {
   set({ exchangeRates, exchangeRateError })
@@ -76,6 +82,13 @@ export function useStore<T>(selector: (s: State) => T): T {
 
 const LIVE_CAPACITY = 450 // 15 minutes at a 2 s cadence
 const live = new Map<string, HistoryPoint[]>()
+
+const counters = new Map<string, Pick<Snapshot, 'at' | 'totalUp' | 'totalDown'>[]>()
+export function getCounters(id: string) {
+  const recent = getLive(id).flatMap(p => p.reportedAt !== undefined && p.totalUp !== undefined && p.totalDown !== undefined
+    ? [{ at: p.reportedAt, totalUp: p.totalUp, totalDown: p.totalDown }] : [])
+  return [...(counters.get(id) ?? []), ...recent]
+}
 
 export const getLive = (id: string) => live.get(id) ?? []
 
@@ -107,6 +120,9 @@ function pushLive(snapshots: Record<string, Snapshot>) {
   const receivedAt = Date.now()
   for (const [id, s] of Object.entries(snapshots)) {
     if (!s.online) continue
+    const samples = counters.get(id) ?? []
+    recordCounters(samples, { at: s.at, totalUp: s.totalUp, totalDown: s.totalDown }, new Date(receivedAt).setHours(0, 0, 0, 0))
+    counters.set(id, samples)
     const buf = live.get(id) ?? []
     // Stamp with our own clock: the instruments plot against Date.now(), and a server whose
     // clock is a minute off would otherwise leave a permanent hole at one end of the window.
@@ -116,6 +132,8 @@ function pushLive(snapshots: Record<string, Snapshot>) {
     buf.push({
       at,
       reportedAt: s.at,
+      totalUp: s.totalUp,
+      totalDown: s.totalDown,
       cpu: s.cpu,
       memUsed: s.memUsed,
       swapUsed: s.swapUsed,
@@ -137,7 +155,10 @@ function pushLive(snapshots: Record<string, Snapshot>) {
 /* ---------- lifecycle ---------- */
 
 const sameNodes = (a: NodeInfo[], b: NodeInfo[]) =>
-  a.length === b.length && a.every((n, i) => n.id === b[i].id && n.name === b[i].name && n.groups.join() === b[i].groups.join())
+  a.length === b.length && a.every((n, i) => (Object.keys(n) as (keyof NodeInfo)[]).every((key) => {
+    const x = n[key], y = b[i][key]
+    return x === y || (Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every((v, j) => v === y[j]))
+  }))
 
 let unsubscribe: (() => void) | null = null
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
@@ -176,14 +197,18 @@ function connect() {
  * Backfill the ledger sparks from server history so they are full on arrival instead of
  * drawing a sliver at the right edge for the first minutes.
  */
+let seedController: AbortController | undefined
+
 async function seedLive() {
   const { site, nodes } = state
   if (!adapter.loadRecent || !site?.recordHours) return
+  seedController = new AbortController()
+  const { signal } = seedController
   const queue = nodes.map((n) => n.id)
   const worker = async () => {
-    for (let id = queue.shift(); id; id = queue.shift()) {
-      const seed = await adapter.loadRecent!(id, 15).catch(() => [])
-      if (!seed.length) continue
+    for (let id = queue.shift(); id && !signal.aborted; id = queue.shift()) {
+      const seed = await adapter.loadRecent(id, 15, signal).catch(() => [])
+      if (signal.aborted || !seed.length) continue
       sparkSeeds.set(id, seed)
       set({ liveVersion: state.liveVersion + 1 })
     }
@@ -192,9 +217,10 @@ async function seedLive() {
 }
 
 /** Fill the 15 minutes before the page opened with complete history points, for the node page. */
-export async function backfillLive(id: string) {
+export async function backfillLive(id: string, signal?: AbortSignal) {
   if (!adapter.capabilities.history || !state.site?.recordHours) return
-  const points = await adapter.loadHistory(id, 1).catch(() => [])
+  const points = await adapter.loadHistory(id, 1, signal).catch(() => [])
+  if (signal?.aborted) return
   const buf = getLive(id)
   const first = buf[0]?.at ?? Infinity
   const older = points.filter((p) => p.at < first && p.at >= Date.now() - 15 * 60_000)
@@ -227,6 +253,7 @@ export async function refresh() {
   refreshTimer = setTimeout(() => set({ refreshing: false }), 10_000)
   unsubscribe?.()
   unsubscribe = null
+  seedController?.abort()
   adapter.reset?.()
   await load().catch((err) => console.error('[zool-theme] refresh failed', err))
   connect()

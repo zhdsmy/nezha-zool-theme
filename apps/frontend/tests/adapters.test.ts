@@ -43,6 +43,8 @@ describe('nezha adapter', () => {
     const second = mapFrame({ now: Date.now(), servers: [server] }, new Map(), notes)
     expect(first.nodes[0].price).toBe(36)
     expect(second.nodes[0]).toMatchObject({ price: 36, billingCycle: 30 })
+    const cleared = mapFrame({ now: Date.now(), servers: [{ ...server, public_note: '' }] }, new Map(), notes)
+    expect(cleared.nodes[0].price).toBe(0)
   })
 
   it('parses billing from public_note', () => {
@@ -140,7 +142,29 @@ describe('nezha mergeMetrics', () => {
     )
     expect(pts.map((p) => p.at)).toEqual([2000, 3000])
     expect(pts[0]).toMatchObject({ cpu: 3, netUp: 40, netDown: 7 })
-    expect(pts[1]).toMatchObject({ cpu: 4, netUp: 50, netDown: 0 })
+    expect(pts[1]).toMatchObject({ cpu: 4, netUp: 50, netDown: NaN })
     expect(pts[0].totalDown).toBeUndefined()
   })
+})
+
+it.each([[' 1 ', 'up'], ['2', 'sum'], ['3', 'max'], ['', 'max']])('maps traffic mode %j to %s', (trafficType, expected) => {
+  expect(parsePublicNote(JSON.stringify({ planDataMod: { trafficType } })).trafficLimitType).toBe(expected)
+})
+
+it('reads embedded cycles, counted units and legacy billing symbols', () => {
+  const note = (amount: string, cycle?: string) => parsePublicNote(JSON.stringify({ billingDataMod: { amount, cycle }, planDataMod: { trafficVol: '1TB/2Week' } }))
+  expect(note('HK$15/3Month')).toMatchObject({ price: 15, currency: 'HK$', billingCycle: 90, trafficLimitPeriod: 14 })
+  expect(note('HK$15/3Month', 'Year').billingCycle).toBe(365)
+  expect(note('HK$15/3Month', 'invalid').billingCycle).toBe(0)
+  expect(note('HK$15/0Month').price).toBe(0)
+})
+
+it('keeps grouped legacy amounts and free text prices', () => {
+  const parse = (amount: string) => parsePublicNote(JSON.stringify({ billingDataMod: { amount } }))
+  expect(parse('1,234,567.50 元')).toMatchObject({ price: 1234567.5, currency: '元' })
+  expect(parse('免費方案').price).toBe(-1)
+})
+
+it.each([['毎日', 1], ['毎週', 7]])('reads Japanese billing cycle %s', (cycle, days) => {
+  expect(parsePublicNote(JSON.stringify({ billingDataMod: { cycle } })).billingCycle).toBe(days)
 })

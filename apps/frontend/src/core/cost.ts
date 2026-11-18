@@ -8,6 +8,11 @@ export interface ExchangeRates {
   stale?: boolean
 }
 
+export function missingCostHint(privateUnavailable: boolean, rates: ExchangeRates | null, failed: boolean) {
+  if (privateUnavailable) return 'overview.actualCostUnavailable'
+  return rates || failed ? 'overview.costUnavailable' : 'overview.costLoading'
+}
+
 const CACHE_KEY = 'zool:exchange-rates'
 let loading: Promise<ExchangeRates> | undefined
 

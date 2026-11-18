@@ -15,7 +15,7 @@ export async function request<T>(url: string, init: RequestInit = {}, timeoutMs 
       credentials: 'same-origin',
       ...init,
       headers: { accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}), ...init.headers },
-      signal: ctrl.signal,
+      signal: init.signal ? AbortSignal.any([init.signal, ctrl.signal]) : ctrl.signal,
     })
     const text = await res.text()
     let body: unknown = text
@@ -40,7 +40,7 @@ export const wsUrl = (path: string) => {
 export function resilientSocket(opts: {
   url: () => string
   onOpen?: (ws: WebSocket) => void
-  onMessage: (data: string) => void
+  onMessage: (data: string) => boolean
   onStatus?: (status: 'connecting' | 'open' | 'closed') => void
   onGiveUp?: () => void
   maxFailures?: number
@@ -48,6 +48,7 @@ export function resilientSocket(opts: {
   let ws: WebSocket | null = null
   let stopped = false
   let failures = 0
+  let idle: ReturnType<typeof setTimeout> | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
 
   const connect = () => {
@@ -63,30 +64,39 @@ export function resilientSocket(opts: {
       return
     }
     ws = socket
-    let opened = false
+    let fed = false
+    const watch = () => {
+      clearTimeout(idle)
+      idle = setTimeout(() => { socket.close(); disconnected() }, 30_000)
+    }
     socket.onopen = () => {
-      opened = true
-      failures = 0
-      opts.onStatus?.('open')
+      if (ws !== socket) return
+      watch()
       opts.onOpen?.(socket)
     }
     socket.onmessage = (e) => {
-      if (typeof e.data === 'string') opts.onMessage(e.data)
+      if (ws !== socket || typeof e.data !== 'string' || !opts.onMessage(e.data)) return
+      if (!fed) opts.onStatus?.('open')
+      fed = true
+      failures = 0
+      watch()
     }
-    socket.onclose = () => {
+    const disconnected = () => {
       if (ws !== socket) return
+      clearTimeout(idle)
       ws = null
       opts.onStatus?.('closed')
       if (stopped) return
       // Count drops after a successful open too, so a flapping server backs off.
       failures++
-      if (!opened && opts.maxFailures && failures >= opts.maxFailures) {
+      if (!fed && opts.maxFailures && failures >= opts.maxFailures) {
         opts.onGiveUp?.()
         return
       }
       const delay = Math.min(15_000, 1000 * 2 ** Math.min(failures, 4))
       timer = setTimeout(connect, delay)
     }
+    socket.onclose = disconnected
   }
 
   connect()
@@ -96,6 +106,7 @@ export function resilientSocket(opts: {
     },
     close() {
       stopped = true
+      clearTimeout(idle)
       clearTimeout(timer)
       ws?.close()
       ws = null

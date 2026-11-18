@@ -140,7 +140,7 @@ function LoginForm() {
 export function LoginDialog() {
   const open = useDialog('login')
   return (
-    <Dialog open={open} onClose={() => closeDialog('login')}>
+    <Dialog open={open} onClose={() => closeDialog('login')} className="overflow-y-auto">
       <LoginForm />
     </Dialog>
   )

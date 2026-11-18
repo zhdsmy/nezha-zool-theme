@@ -41,7 +41,7 @@ it('keeps groups on the first live event after loadNodes (no flicker)', async ()
   // Deliver the socket's first frame without waiting for a real event-loop tick.
   await vi.advanceTimersByTimeAsync(0)
   const nodes = await loading
-  expect(vi.getTimerCount()).toBe(0)
+  expect(vi.getTimerCount()).toBe(1) // the stream inactivity timer
   const grouped = nodes.filter((n) => n.groups.length).length
   expect(grouped).toBeGreaterThan(10)
 
@@ -85,4 +85,107 @@ it('reset drops the cached frame and socket, so the next load waits for a new fr
   expect(nodes.length).toBeGreaterThan(0)
   // Groups are fetched again rather than served from the previous promise.
   expect(fetches.mock.calls.some(([u]) => String(u).includes('server-group'))).toBe(true)
+})
+
+it('retries an unsuccessful group response on the next load', async () => {
+  nezha.reset!()
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(Response.json({ success: false }))
+    .mockResolvedValueOnce(Response.json(groups))
+  vi.stubGlobal('fetch', fetch)
+  await expect(nezha.loadNodes()).rejects.toThrow('Nezha groups unavailable')
+  const retry = nezha.loadNodes()
+  await vi.advanceTimersByTimeAsync(0)
+  expect((await retry).some(n => n.groups.length)).toBe(true)
+  expect(fetch).toHaveBeenCalledTimes(2)
+})
+
+it('waits for a valid frame and reconnects after silence or malformed frames', async () => {
+  nezha.reset!()
+  const sockets: FakeSocket[] = []
+  vi.stubGlobal('WebSocket', class {
+    constructor() { sockets.push(this as unknown as FakeSocket) }
+    close() {}
+  })
+  const events: LiveEvent[] = [], status: string[] = []
+  const stop = nezha.subscribe(e => events.push(e), s => status.push(s))
+  const socket = sockets[0]
+  socket.onopen!()
+  socket.onmessage!({ data: '{"servers":[]}' })
+  expect(status).not.toContain('open')
+  expect(events).toHaveLength(0)
+  socket.onmessage!({ data: '{"now":100}' }) // Nezha omits an empty fleet.
+  expect(events.at(-1)?.nodes).toEqual([])
+  expect(status.at(-1)).toBe('open')
+  await vi.advanceTimersByTimeAsync(29_000)
+  socket.onmessage!({ data: 'broken' })
+  await vi.advanceTimersByTimeAsync(1_000)
+  expect(status.at(-1)).toBe('closed')
+  await vi.advanceTimersByTimeAsync(2_000)
+  expect(sockets).toHaveLength(2)
+  socket.onmessage!({ data: '{"now":200}' })
+  expect(events).toHaveLength(1)
+  stop()
+  nezha.reset!()
+})
+
+it('cancels every in-flight request for the discarded metric view', async () => {
+  const signals: AbortSignal[] = []
+  vi.stubGlobal('fetch', (_url: string, init: RequestInit) => new Promise<Response>((_, reject) => {
+    signals.push(init.signal!)
+    init.signal!.addEventListener('abort', () => reject(init.signal!.reason), { once: true })
+  }))
+  const ctrl = new AbortController()
+  const pending = [nezha.loadHistory('1', 24, ctrl.signal), nezha.loadRecent('1', 15, ctrl.signal), nezha.loadPing('1', 1, ctrl.signal)]
+  expect(signals.length).toBeGreaterThan(3)
+  ctrl.abort()
+  expect(signals.every(s => s.aborted)).toBe(true)
+  for (const result of await Promise.allSettled(pending)) expect(result).toMatchObject({ status: 'rejected', reason: { name: 'AbortError' } })
+})
+
+it('ignores group responses from a previous connection after reset', async () => {
+  nezha.reset!()
+  vi.stubGlobal('WebSocket', FakeSocket)
+  let finish!: (res: Response) => void
+  vi.stubGlobal('fetch', vi.fn()
+    .mockReturnValueOnce(new Promise<Response>(resolve => { finish = resolve }))
+    .mockResolvedValueOnce(Response.json({ success: true, data: [] })))
+  const stopOld = nezha.subscribe(() => {})
+  nezha.reset!()
+  stopOld()
+  const fresh = nezha.loadNodes()
+  await vi.advanceTimersByTimeAsync(0)
+  await fresh
+  finish(Response.json(groups))
+  await vi.advanceTimersByTimeAsync(0)
+  const events: LiveEvent[] = []
+  const stop = nezha.subscribe(e => events.push(e))
+  expect(events[0].nodes?.every(n => !n.groups.length)).toBe(true)
+  stop()
+})
+
+it('drops first-frame notes on a new socket even if the same node reconnects without a note', async () => {
+  nezha.reset!()
+  let active!: FakeSocket
+  vi.stubGlobal('WebSocket', class {
+    constructor() { active = this as unknown as FakeSocket }
+    close() {}
+  })
+  vi.stubGlobal('fetch', async () => Response.json(groups))
+  const events: LiveEvent[] = []
+  const stop = nezha.subscribe(e => events.push(e))
+  const node = { id: 1, name: 'same' }
+  const send = (server: typeof node & { public_note?: string }) =>
+    active.onmessage!({ data: JSON.stringify({ now: 100, servers: [server] }) })
+  active.onopen!()
+  send({ ...node, public_note: '{"billingDataMod":{"amount":"USD 20"}}' })
+  send(node)
+  expect(events.at(-1)?.nodes?.[0].price).toBe(20)
+  active.onclose!()
+  await vi.advanceTimersByTimeAsync(2_000)
+  active.onopen!()
+  send(node)
+  expect(events.at(-1)?.nodes?.[0].price).toBe(0)
+  stop()
+  nezha.reset!()
 })

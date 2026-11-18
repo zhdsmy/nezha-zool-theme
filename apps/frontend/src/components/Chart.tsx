@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useIsNarrow } from '@/app/ui'
 
 export interface ChartPoint {
@@ -80,6 +80,17 @@ export function Chart({ series, format, formatTime, formatTooltipTime = formatTi
   // three charts to a row on a tablet are narrower than one on a phone; both get the compact axes
   const isMobile = useIsNarrow()
   const [hoverT, setHoverT] = useState<number | null>(null)
+  const [pinned, setPinned] = useState(false)
+  useEffect(() => {
+    if (!pinned) return
+    const dismiss = (e: globalThis.PointerEvent) => {
+      if (box.current?.contains(e.target as Node)) return
+      setPinned(false)
+      setHoverT(null)
+    }
+    document.addEventListener('pointerdown', dismiss)
+    return () => document.removeEventListener('pointerdown', dismiss)
+  }, [pinned])
   const uid = useId().replace(/:/g, '')
 
   useLayoutEffect(() => {
@@ -172,7 +183,15 @@ export function Chart({ series, format, formatTime, formatTooltipTime = formatTi
   return (
     <div ref={box} className="relative select-none" style={{ height }} role="img" aria-label={label}>
       {width > 0 && (
-        <svg width={width} height={height} className="block touch-pan-y overflow-visible" onPointerMove={onMove} onPointerLeave={() => setHoverT(null)}>
+        <svg width={width} height={height} className="block touch-pan-y overflow-visible"
+          onPointerMove={e => { if (e.pointerType !== 'touch') onMove(e) }}
+          onPointerUp={e => {
+            if (e.pointerType !== 'touch') return
+            onMove(e)
+            setPinned(true)
+          }}
+          onPointerLeave={e => { if (e.pointerType !== 'touch') { setPinned(false); setHoverT(null) } }}
+        >
           <defs>
             {prepared.map((s) => (
               <linearGradient key={s.key} id={`${uid}-${s.key}`} x1="0" x2="0" y1="0" y2="1">

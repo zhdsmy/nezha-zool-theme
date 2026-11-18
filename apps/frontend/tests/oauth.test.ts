@@ -34,6 +34,7 @@ describe('Nezha OAuth login', () => {
     view.site = await loadSite(['GitHub', 'Google'])
     expect(view.site.oauth).toBe(true)
     const html = renderToStaticMarkup(createElement(LoginDialog))
+    expect(html.match(/<dialog[^>]+>/)?.[0]).toContain('overflow-y-auto')
     expect(html).toContain('>GitHub</button>')
     expect(html).toContain('>Google</button>')
     expect(html).toContain('autoComplete="username"')
@@ -92,4 +93,11 @@ describe('Nezha OAuth login', () => {
     expect(html).toContain('>GitHub</button>')
     expect(html).not.toContain('type="password"')
   })
+})
+
+it('rejects failed settings so the load-error screen can retry', async () => {
+  vi.stubGlobal('window', { ZoolConfig: {} })
+  respond({ success: false })
+  await expect(nezha.loadSite()).rejects.toThrow('Nezha settings unavailable')
+  await expect(loadSite(['GitHub'])).resolves.toMatchObject({ oauth: true })
 })
