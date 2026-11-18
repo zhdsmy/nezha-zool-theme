@@ -69,7 +69,7 @@ function InfoList({ title, rows }: { title: string; rows: InfoRow[] }) {
             className="node-info-row flex items-baseline justify-between gap-6 border-b border-line py-3 text-[14px] md:gap-3 md:py-1.5 md:text-[13px] lg:gap-6 lg:py-3 lg:text-[14px]"
           >
             <dt className="node-info-dt shrink-0 text-muted">{k}</dt>
-            <dd className="node-info-dd min-w-0 truncate text-right" title={typeof v === 'string' ? v : undefined}>
+            <dd className="node-info-dd min-w-0 wrap-anywhere text-right" title={typeof v === 'string' ? v : undefined}>
               {v}
             </dd>
           </div>

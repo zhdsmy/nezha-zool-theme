@@ -12,3 +12,10 @@ it('gives the skip link a programmatically focusable destination', () => {
   expect(app).toContain('href="#main"')
   expect(app).toMatch(/<main\b[^>]*\bid="main"[^>]*tabIndex=\{-1\}/)
 })
+
+it('allows node information values to wrap on desktop as well as mobile', () => {
+  const page = readFileSync(new URL('../src/pages/NodePage.tsx', import.meta.url), 'utf8')
+  const cell = page.match(/<dd className="node-info-dd[^"]+/)?.[0]
+  expect(cell).toContain('wrap-anywhere')
+  expect(cell).not.toContain('truncate')
+})

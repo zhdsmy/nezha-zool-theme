@@ -951,12 +951,6 @@
   .node-info-row[data-wide] {
     grid-column: 1 / -1;
   }
-  .node-info-dd {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    overflow-wrap: anywhere;
-  }
   .node-peak-vals {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1095,11 +1089,6 @@
 @media (768px <= width < 1024px) {
   .node-info-grid {
     align-items: start;
-  }
-  .node-info-dd {
-    white-space: normal;
-    text-overflow: clip;
-    overflow-wrap: break-word;
   }
 }
 /* A 910px foldable screen cannot spare 48px a side: the cards need it more. */
