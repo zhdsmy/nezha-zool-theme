@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select"
 import { IconButton } from "@/components/xui/icon-button"
 import { useNotification } from "@/hooks/useNotfication"
+import { serverOptions } from "@/lib/server-options"
 import { useServer } from "@/hooks/useServer"
 import { asOptionalField } from "@/lib/utils"
 import { ModelCron } from "@/types"
@@ -114,10 +115,7 @@ export const CronCard: React.FC<CronCardProps> = ({ data, mutate }) => {
     })
 
     const { servers } = useServer()
-    const serverList = servers?.map((s) => ({
-        value: `${s.id}`,
-        label: s.name,
-    })) || [{ value: "", label: "" }]
+    const serverList = serverOptions(servers)
 
     const { notifierGroup } = useNotification()
     const ngroupList = notifierGroup?.map((ng) => ({

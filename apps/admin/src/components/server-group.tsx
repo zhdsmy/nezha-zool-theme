@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { IconButton } from "@/components/xui/icon-button"
 import { MultiSelect } from "@/components/xui/multi-select"
+import { serverOptions } from "@/lib/server-options"
 import { useServer } from "@/hooks/useServer"
 import { ModelServerGroupResponseItem } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -79,10 +80,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
     })
 
     const { servers } = useServer()
-    const serverList = servers?.map((s) => ({
-        value: `${s.id}`,
-        label: s.name,
-    })) || [{ value: "", label: "" }]
+    const serverList = serverOptions(servers)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

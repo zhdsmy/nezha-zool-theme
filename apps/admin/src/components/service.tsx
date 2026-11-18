@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select"
 import { IconButton } from "@/components/xui/icon-button"
 import { useNotification } from "@/hooks/useNotfication"
+import { serverOptions } from "@/lib/server-options"
 import { useServer } from "@/hooks/useServer"
 import { conv } from "@/lib/utils"
 import { asOptionalField } from "@/lib/utils"
@@ -134,10 +135,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
     })
 
     const { servers } = useServer()
-    const serverList = servers?.map((s) => ({
-        value: `${s.id}`,
-        label: s.name,
-    })) || [{ value: "", label: "" }]
+    const serverList = serverOptions(servers)
 
     const { notifierGroup } = useNotification()
     const ngroupList = notifierGroup?.map((ng) => ({
