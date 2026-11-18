@@ -432,9 +432,9 @@ function loadGroups() {
     const groups = groupIndex(r.data ?? [])
     if (groupsPromise === pending) groupsCache = groups
     return groups
-  }).catch(error => {
+  }).catch(() => {
     if (groupsPromise === pending) groupsPromise = null
-    throw error
+    return new Map<number, string[]>()
   })
   return (groupsPromise = pending)
 }
@@ -545,7 +545,7 @@ export const nezha: NezhaAdapter = {
   },
 
   subscribe(listener, onStatus) {
-    void loadGroups().catch(() => {})
+    void loadGroups()
     return hub.listen((frame) => listener(mapFrame(frame, groupsCache)), onStatus)
   },
 

@@ -87,16 +87,24 @@ it('reset drops the cached frame and socket, so the next load waits for a new fr
   expect(fetches.mock.calls.some(([u]) => String(u).includes('server-group'))).toBe(true)
 })
 
-it('retries an unsuccessful group response on the next load', async () => {
+it.each(['403', '500', 'timeout', 'success:false'])('shows ungrouped nodes after %s and retries groups', async failure => {
   nezha.reset!()
   const fetch = vi.fn()
-    .mockResolvedValueOnce(Response.json({ success: false }))
-    .mockResolvedValueOnce(Response.json(groups))
+  if (failure === 'timeout') {
+    fetch.mockImplementationOnce((_url, { signal }: RequestInit) => new Promise((_resolve, reject) => {
+      signal!.addEventListener('abort', () => reject(signal!.reason), { once: true })
+    }))
+  } else {
+    fetch.mockResolvedValueOnce(Response.json({ success: false }, { status: failure === 'success:false' ? 200 : Number(failure) }))
+  }
+  fetch.mockResolvedValueOnce(Response.json(groups))
   vi.stubGlobal('fetch', fetch)
-  await expect(nezha.loadNodes()).rejects.toThrow('Nezha groups unavailable')
-  const retry = nezha.loadNodes()
-  await vi.advanceTimersByTimeAsync(0)
-  expect((await retry).some(n => n.groups.length)).toBe(true)
+  const first = nezha.loadNodes()
+  const check = expect(first).resolves.toHaveLength(frame.servers.length)
+  await vi.advanceTimersByTimeAsync(failure === 'timeout' ? 15_000 : 0)
+  await check
+  expect((await first).every(n => n.groups.length === 0)).toBe(true)
+  expect((await nezha.loadNodes()).some(n => n.groups.length)).toBe(true)
   expect(fetch).toHaveBeenCalledTimes(2)
 })
 
