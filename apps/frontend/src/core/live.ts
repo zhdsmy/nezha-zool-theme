@@ -32,8 +32,10 @@ export function bucketSeries(
   const hits = new Int32Array(count)
   for (const p of points) {
     if (p.at < from || p.at > to) continue
+    const value = pick(p)
+    if (!Number.isFinite(value)) continue
     const i = Math.min(count - 1, Math.floor((p.at - from) / width))
-    sums[i] += pick(p)
+    sums[i] += value
     hits[i]++
   }
   return Array.from({ length: count }, (_, i) => ({

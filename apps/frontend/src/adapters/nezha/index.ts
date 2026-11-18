@@ -454,7 +454,7 @@ export function mergeMetrics(series: Partial<Record<keyof typeof METRICS, NezhaM
       if (ts < since || !Number.isFinite(value)) continue
       let point = byTs.get(ts)
       if (!point) {
-        point = { at: ts, cpu: 0, memUsed: 0, swapUsed: 0, diskUsed: 0, netUp: 0, netDown: 0, load1: 0, tcp: 0, udp: 0, process: 0 }
+        point = { at: ts, cpu: NaN, memUsed: NaN, swapUsed: NaN, diskUsed: NaN, netUp: NaN, netDown: NaN, load1: NaN, tcp: NaN, udp: NaN, process: NaN }
         byTs.set(ts, point)
       }
       ;(point as unknown as Record<string, number>)[field] = value

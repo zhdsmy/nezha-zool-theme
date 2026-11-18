@@ -142,7 +142,7 @@ describe('nezha mergeMetrics', () => {
     )
     expect(pts.map((p) => p.at)).toEqual([2000, 3000])
     expect(pts[0]).toMatchObject({ cpu: 3, netUp: 40, netDown: 7 })
-    expect(pts[1]).toMatchObject({ cpu: 4, netUp: 50, netDown: 0 })
+    expect(pts[1]).toMatchObject({ cpu: 4, netUp: 50, netDown: NaN })
     expect(pts[0].totalDown).toBeUndefined()
   })
 })

@@ -210,17 +210,21 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
     label,
     color,
     area,
-    points: points.map((p) => ({ t: p.at, v: pick(p) })),
+    points: points.map((p) => {
+      const value = pick(p)
+      return { t: p.at, v: Number.isFinite(value) ? value : null }
+    }),
   })
   const common = { height, formatTime: fmt.axis, formatTooltipTime: fmt.tooltip }
   const last = points[points.length - 1]
+  const reading = (v: number, format: (value: number) => string = String) => Number.isFinite(v) ? format(v) : '—'
 
   return (
     <div className="node-chart-grid grid gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3">
-      <ChartCard title={t('metric.cpu')} value={last ? `${formatPercent(last.cpu)}%` : undefined}>
+      <ChartCard title={t('metric.cpu')} value={last ? reading(last.cpu, v => `${formatPercent(v)}%`) : undefined}>
         <Chart {...common} label={t('metric.cpu')} yMax={100} format={(v) => `${formatNumber(v, 0)}%`} series={[s('cpu', t('metric.cpu'), 'var(--chart-1)', (p) => p.cpu, true)]} />
       </ChartCard>
-      <ChartCard title={t('metric.memory')} value={last ? `${formatBytes(last.memUsed)} / ${formatBytes(memTotal)}` : undefined}>
+      <ChartCard title={t('metric.memory')} value={last ? `${reading(last.memUsed, formatBytes)} / ${formatBytes(memTotal)}` : undefined}>
         <Chart
           {...common}
           label={t('metric.memory')}
@@ -229,7 +233,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
           series={[s('mem', t('metric.memory'), 'var(--chart-2)', (p) => p.memUsed, true), ...(node.swapTotal ? [s('swap', t('metric.swap'), 'var(--chart-3)', (p) => p.swapUsed)] : [])]}
         />
       </ChartCard>
-      <ChartCard title={t('metric.disk')} value={last ? `${formatBytes(last.diskUsed)} / ${formatBytes(diskTotal)}` : undefined}>
+      <ChartCard title={t('metric.disk')} value={last ? `${reading(last.diskUsed, formatBytes)} / ${formatBytes(diskTotal)}` : undefined}>
         <Chart {...common} label={t('metric.disk')} yMax={diskTotal || undefined} format={(v) => formatBytes(v, 0)} series={[s('disk', t('metric.disk'), 'var(--chart-3)', (p) => p.diskUsed, true)]} />
       </ChartCard>
       <ChartCard
@@ -237,7 +241,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
         value={
           last ? (
             <>
-              <SeriesDot color="var(--chart-1)" />↑ {formatSpeed(last.netUp)} · <SeriesDot color="var(--chart-2)" />↓ {formatSpeed(last.netDown)}
+              <SeriesDot color="var(--chart-1)" />↑ {reading(last.netUp, formatSpeed)} · <SeriesDot color="var(--chart-2)" />↓ {reading(last.netDown, formatSpeed)}
             </>
           ) : undefined
         }
@@ -254,7 +258,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
         value={
           last ? (
             <>
-              <SeriesDot color="var(--chart-1)" />TCP {last.tcp} · <SeriesDot color="var(--chart-4)" />UDP {last.udp}
+              <SeriesDot color="var(--chart-1)" />TCP {reading(last.tcp)} · <SeriesDot color="var(--chart-4)" />UDP {reading(last.udp)}
             </>
           ) : undefined
         }
@@ -266,7 +270,7 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
           series={[s('tcp', t('metric.tcp'), 'var(--chart-1)', (p) => p.tcp, true), s('udp', t('metric.udp'), 'var(--chart-4)', (p) => p.udp)]}
         />
       </ChartCard>
-      <ChartCard title={`${t('metric.load')} · ${t('metric.process')}`} value={last ? `${formatNumber(last.load1)} · ${last.process}` : undefined}>
+      <ChartCard title={`${t('metric.load')} · ${t('metric.process')}`} value={last ? `${reading(last.load1, formatNumber)} · ${reading(last.process)}` : undefined}>
         <Chart
           {...common}
           label={t('metric.load')}
