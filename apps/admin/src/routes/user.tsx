@@ -112,7 +112,10 @@ export default function UserPage() {
         return data ?? []
     }, [data])
 
-    const table = useSelectableTable(dataCache, columns, row => row.original.id !== profile?.id)
+    const currentId = profile?.id
+    const table = useSelectableTable(dataCache, columns, row =>
+        currentId !== undefined && Number.isSafeInteger(currentId) && currentId > 0 && row.original.id !== currentId,
+    )
 
     const selectedRows = table.getSelectedRowModel().rows.filter(row => row.getCanSelect())
 

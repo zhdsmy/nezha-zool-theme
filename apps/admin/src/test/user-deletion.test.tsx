@@ -20,3 +20,15 @@ test("select all and row delete exclude the signed-in user", () => {
     expect(checks.map(c => c.getAttribute("aria-checked"))).toEqual(["false", "true"])
     expect(container.querySelectorAll('td[data-col=actions] button:disabled')).toHaveLength(1)
 })
+
+test("losing a valid identity disables deletion even after selecting other users", () => {
+    const { container, rerender } = render(page())
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all" }))
+    for (const id of [undefined, null, 0, -1, 1.5, "1"]) {
+        identity.id = id
+        rerender(page())
+        expect(container.querySelectorAll('td[data-col=actions] button:enabled')).toHaveLength(0)
+        expect(screen.getByRole("checkbox", { name: "Select all" })).toHaveProperty("disabled", true)
+        expect(screen.queryByRole("checkbox", { checked: true })).toBeNull()
+    }
+})
