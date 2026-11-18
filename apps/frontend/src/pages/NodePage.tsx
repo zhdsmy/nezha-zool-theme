@@ -721,7 +721,7 @@ export function NodePage({ id }: { id: string }) {
             [t('node.networkRoute'), node.networkRoute, true],
             [
               t('node.today'),
-              day.summary ? (
+              day.summary && day.summary.todayUp !== null && day.summary.todayDown !== null ? (
                 <span key="t" className="inline-flex items-center gap-2">
                   <span className="num">
                     ↑ {formatBytes(day.summary.todayUp)} · ↓ {formatBytes(day.summary.todayDown)}

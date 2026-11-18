@@ -18,8 +18,8 @@ export function recordCounters(samples: Counters[], point: Counters, midnight: n
 }
 
 export interface DaySummary {
-  todayUp: number
-  todayDown: number
+  todayUp: number | null
+  todayDown: number | null
   peakUp: number
   peakUpAt: number
   peakDown: number
@@ -36,7 +36,7 @@ export function summariseDay(
   live: readonly Counters[],
   midnight: number,
 ): DaySummary {
-  const s: DaySummary = { todayUp: 0, todayDown: 0, peakUp: 0, peakUpAt: 0, peakDown: 0, peakDownAt: 0 }
+  const s: DaySummary = { todayUp: null, todayDown: null, peakUp: 0, peakUpAt: 0, peakDown: 0, peakDownAt: 0 }
   for (const p of points) {
     if (p.netUp > s.peakUp) {
       s.peakUp = p.netUp
@@ -48,15 +48,18 @@ export function summariseDay(
     }
   }
   for (const [key, total] of [['totalUp', 'todayUp'], ['totalDown', 'todayDown']] as const) {
+    if (!points.some(p => p.at >= midnight && Number.isFinite(p[key]))) continue
+    let sum = 0
     let previous: number | undefined
     const readings = new Map<number, number>()
     for (const p of [...live, ...points]) {
       if (p.at >= midnight && p[key] !== undefined) readings.set(p.at, p[key]!)
     }
     for (const [, value] of [...readings].sort(([a], [b]) => a - b)) {
-      if (previous !== undefined) s[total] += value >= previous ? value - previous : value
+      if (previous !== undefined) sum += value >= previous ? value - previous : value
       previous = value
     }
+    s[total] = sum
   }
   return s
 }

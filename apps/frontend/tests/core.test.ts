@@ -57,6 +57,12 @@ describe('day summary', () => {
     expect(s).toMatchObject({ todayUp: 300, todayDown: 100, peakUp: 9, peakUpAt: 500, peakDown: 7, peakDownAt: 1_000 })
   })
 
+  it('requires a recorded baseline separately for each direction', () => {
+    const live = [{ at: 5, totalUp: 100, totalDown: 90 }]
+    expect(summariseDay([p(2, 0, 0, 75)], live, 1)).toMatchObject({ todayUp: 25, todayDown: null })
+    expect(summariseDay([p(2, 0, 0, 75), p(3, 0, 0, undefined, 80)], live, 1).todayDown).toBe(10)
+  })
+
   it('merges delayed reports by measurement time and retains reset endpoints', () => {
     const live: { at: number; totalUp: number; totalDown: number }[] = []
     for (const [at, value] of [[3, 140], [5, 15], [2, 120], [4, 10], [6, 20], [7, 25]]) {
