@@ -7,6 +7,7 @@ import { setShave, useShave } from '@/app/prefs'
 import type { HistoryPoint, NodeInfo, PingData, Snapshot } from '@/core/model'
 import { formatBytes, formatClock, formatNumber, formatPercent, formatSpeed, quotaUsage, ratio } from '@/core/format'
 import { regionName, stripFlag } from '@/core/region'
+import { watchDay } from '@/app/day'
 import { summariseDay, spikeLimit } from '@/core/summary'
 import { Chart, type ChartSeries } from '@/components/Chart'
 import { HourGrid } from '@/components/HourGrid'
@@ -146,20 +147,23 @@ function useWeekHistory(id: string) {
 }
 
 function useDaySummary(id: string, snap: Snapshot | undefined) {
-  const [points, setPoints] = useState<HistoryPoint[] | null>(null)
+  const [midnight, setMidnight] = useState(() => new Date().setHours(0, 0, 0, 0))
+  useEffect(() => watchDay(setMidnight), [])
+  const key = `${id}:${midnight}`
+  const [result, setResult] = useState<{ key: string; points: HistoryPoint[] } | null>(null)
+  const points = result?.key === key ? result.points : null
   const [nonce, setNonce] = useState(0)
   useEffect(() => {
     if (!adapter.capabilities.history) return
     let cancelled = false
     adapter
       .loadHistory(id, 24)
-      .then((p) => !cancelled && setPoints(p))
-      .catch(() => !cancelled && setPoints([]))
+      .then((points) => !cancelled && setResult({ key, points }))
+      .catch(() => !cancelled && setResult({ key, points: [] }))
     return () => {
       cancelled = true
     }
-  }, [id, nonce])
-  const midnight = new Date().setHours(0, 0, 0, 0)
+  }, [id, key, nonce])
   // Wait for a live snapshot: today's traffic is measured against its counters.
   const summary = points && points.length && snap ? summariseDay(points, [...getCounters(id), snap], midnight) : null
   return { summary, refresh: () => setNonce((n) => n + 1) }
