@@ -1,7 +1,7 @@
 import { Oauth2RequestType, getOauth2RedirectURL, unbindOauth2 } from "@/api/oauth2"
 import { getProfile } from "@/api/user"
 import { ProfileCard } from "@/components/profile"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OAuthProviderIcon } from "@/components/ui/icon"
@@ -57,13 +57,7 @@ export default function ProfilePage() {
                     <Avatar
                         className={`${isDesktop ? "h-[300px] w-[300px]" : "h-[150px] w-[150px]"} border-foreground border-[1px]`}
                     >
-                        <AvatarImage
-                            src={
-                                "https://api.dicebear.com/7.x/notionists/svg?seed=" +
-                                profile.username
-                            }
-                            alt={profile.username}
-                        />
+
                         <AvatarFallback>{profile.username}</AvatarFallback>
                     </Avatar>
                     <div>
