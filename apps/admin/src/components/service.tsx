@@ -19,6 +19,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -82,6 +83,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
         defaultValues: data
             ? {
                   ...data,
+                  fail_trigger_tasks: data.fail_trigger_tasks ?? [],
+                  recover_trigger_tasks: data.recover_trigger_tasks ?? [],
                   fail_trigger_tasks_raw: conv.arrToStr(data.fail_trigger_tasks),
                   recover_trigger_tasks_raw: conv.arrToStr(data.recover_trigger_tasks),
                   skip_servers_raw: conv.recordToStrArr(data.skip_servers ? data.skip_servers : {}),
@@ -458,6 +461,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">

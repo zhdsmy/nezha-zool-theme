@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import * as LabelPrimitive from "@radix-ui/react-label"
@@ -21,6 +22,14 @@ import {
 } from "react-hook-form"
 
 const Form = FormProvider
+
+function FormErrors() {
+    const { formState: { errors, submitCount } } = useFormContext()
+    const { t } = useTranslation()
+    return submitCount > 0 && Object.keys(errors).length > 0
+        ? <p role="alert" className="text-sm text-destructive">{t("Validation.InvalidForm")}</p>
+        : null
+}
 
 type FormFieldContextValue<
     TFieldValues extends FieldValues = FieldValues,
@@ -164,6 +173,7 @@ FormMessage.displayName = "FormMessage"
 export {
     useFormField,
     Form,
+    FormErrors,
     FormItem,
     FormLabel,
     FormControl,

@@ -20,6 +20,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -108,6 +109,7 @@ const serverFormSchema = z.object({
 
 export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
+    data = { ...data, ddns_profiles: data.ddns_profiles ?? [] }
     const form = useForm({
         resolver: zodResolver(serverFormSchema) as any,
         defaultValues: {
@@ -991,6 +993,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                         </>
                                     )}
                                 </div>
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">

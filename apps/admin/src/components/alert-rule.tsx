@@ -19,6 +19,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -104,7 +105,10 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
         defaultValues: data
             ? {
                   ...data,
-                  rules_raw: JSON.stringify(data.rules),
+                  fail_trigger_tasks: data.fail_trigger_tasks ?? [],
+                  recover_trigger_tasks: data.recover_trigger_tasks ?? [],
+                  rules: data.rules ?? [],
+                  rules_raw: JSON.stringify(data.rules ?? []),
                   fail_trigger_tasks_raw: conv.arrToStr(data.fail_trigger_tasks),
                   recover_trigger_tasks_raw: conv.arrToStr(data.recover_trigger_tasks),
               }
@@ -727,6 +731,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">

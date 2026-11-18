@@ -18,6 +18,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -50,7 +51,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
         defaultValues: data
             ? {
                   name: data.group.name,
-                  servers: data.servers,
+                  servers: data.servers ?? [],
               }
             : {
                   name: "",
@@ -138,6 +139,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">

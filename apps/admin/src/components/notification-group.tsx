@@ -18,6 +18,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -50,7 +51,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
         defaultValues: data
             ? {
                   name: data.group.name,
-                  notifications: data.notifications,
+                  notifications: data.notifications ?? [],
               }
             : {
                   name: "",
@@ -136,6 +137,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">
