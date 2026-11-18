@@ -267,7 +267,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                                     {t("Name")}
                                                 </FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="My Server" {...field} />
+                                                    <Input placeholder={t("Placeholders.ServerName")} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -724,7 +724,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                                             }
                                                         >
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Select cycle" />
+                                                                <SelectValue placeholder={t("Placeholders.SelectCycle")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="Day">
@@ -822,7 +822,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                                             {t("PublicNote.TrafficVolume")}
                                                         </Label>
                                                         <Input
-                                                            placeholder="1TB/Month"
+                                                            placeholder={t("Placeholders.TrafficVolume")}
                                                             value={
                                                                 publicNoteObj.planDataMod
                                                                     ?.trafficVol
@@ -867,7 +867,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                                             }
                                                         >
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Select type" />
+                                                                <SelectValue placeholder={t("Placeholders.SelectType")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="1">

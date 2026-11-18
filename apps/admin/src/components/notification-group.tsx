@@ -107,7 +107,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
                                         <FormItem>
                                             <FormLabel>{t("Name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Group Name" {...field} />
+                                                <Input placeholder={t("Placeholders.GroupName")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

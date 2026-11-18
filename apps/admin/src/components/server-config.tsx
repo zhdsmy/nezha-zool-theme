@@ -208,7 +208,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                 {loading ? (
                     <div className="items-center mx-1">
                         <DialogHeader>
-                            <DialogTitle>Loading...</DialogTitle>
+                            <DialogTitle>{t("Loading")}...</DialogTitle>
                             <DialogDescription />
                         </DialogHeader>
                     </div>
@@ -229,7 +229,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                                         name="ip_report_period"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>ip_report_period</FormLabel>
+                                                <FormLabel>{t("AgentConfig.ip_report_period")}</FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="number"
@@ -246,7 +246,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                                         name="report_delay"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>report_delay</FormLabel>
+                                                <FormLabel>{t("AgentConfig.report_delay")}</FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="number"
@@ -263,9 +263,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                                         name="hard_drive_partition_allowlist_raw"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>
-                                                    hard_drive_partition_allowlist
-                                                </FormLabel>
+                                                <FormLabel>{t("AgentConfig.hard_drive_partition_allowlist")}</FormLabel>
                                                 <FormControl>
                                                     <Textarea className="resize-y" {...field} />
                                                 </FormControl>
@@ -278,7 +276,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                                         name="nic_allowlist_raw"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>nic_allowlist</FormLabel>
+                                                <FormLabel>{t("AgentConfig.nic_allowlist")}</FormLabel>
                                                 <FormControl>
                                                     <Textarea className="resize-y" {...field} />
                                                 </FormControl>
@@ -306,7 +304,7 @@ export const ServerConfigCard = ({ sid, menuItem = false, ...props }: ServerConf
                                                                         }
                                                                     />
                                                                     <Label className="text-sm">
-                                                                        {t(field)}
+                                                                        {t(`AgentConfig.${field}`)}
                                                                     </Label>
                                                                 </div>
                                                             </FormControl>

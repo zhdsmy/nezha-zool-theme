@@ -103,7 +103,7 @@ export const BatchMoveServerIcon: React.FC<BatchMoveServerIconProps> = ({
                             <Label>{t("ToUser")}</Label>
                             <Input
                                 type="number"
-                                placeholder="User ID"
+                                placeholder={t("UserId")}
                                 value={toUserId}
                                 onChange={(e) => {
                                     setToUserId(parseInt(e.target.value, 10))

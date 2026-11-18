@@ -1,4 +1,42 @@
 {
+    "SelectOptions": "選擇選項",
+    "Path": "路徑",
+    "Placeholders": {
+        "ServerName": "我的伺服器",
+        "TaskName": "我的任務",
+        "SelectTaskType": "選擇任務類型",
+        "CronExpression": "0 0 3 * * *（凌晨 3 點）",
+        "DDNSName": "我的 DDNS 設定",
+        "SelectServiceType": "選擇服務類型",
+        "TokenID": "權杖 ID",
+        "TokenSecret": "權杖密鑰",
+        "NATName": "我的內網穿透設定",
+        "LocalService": "192.168.1.1:80（含連接埠）",
+        "GroupName": "分組名稱",
+        "NotifierName": "我的通知方式",
+        "ServiceName": "我的服務監控",
+        "SelectCycle": "選擇週期",
+        "SelectType": "選擇類型",
+        "TrafficVolume": "1TB/月",
+        "ServiceTarget": "HTTP（https://t.tt）、Ping（t.tt）或 TCP（t.tt:80）"
+    },
+    "AgentConfig": {
+        "ip_report_period": "IP 上報週期（秒）",
+        "report_delay": "狀態上報間隔（秒）",
+        "hard_drive_partition_allowlist": "磁碟分割區白名單（JSON）",
+        "nic_allowlist": "網卡白名單（JSON）",
+        "disable_auto_update": "停用自動更新",
+        "disable_command_execute": "禁止執行命令",
+        "disable_force_update": "停用強制更新",
+        "disable_nat": "停用內網穿透",
+        "disable_send_query": "停用主動探測上報",
+        "gpu": "啟用 GPU 監控",
+        "temperature": "啟用溫度監控",
+        "skip_connection_count": "略過連線數統計",
+        "skip_procs_count": "略過行程數統計",
+        "debug": "除錯模式"
+    },
+    "PageNavigation": "分頁",
     "InterfaceLanguage": "介面語言",
     "NotificationLanguage": "通知語言",
     "Retry": "重試",
@@ -372,6 +410,8 @@
         }
     },
     "FrontendManager": {
+        "Next": "下一頁",
+        "Previous": "上一頁",
         "Remove": "刪除",
         "ConfirmRemove": "刪除「{{name}} · {{version}}」及其檔案？此操作無法復原，如需再次使用，請重新安裝。",
         "Removed": "主題已刪除。"

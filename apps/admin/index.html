@@ -2,6 +2,30 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
+        <script>
+            (() => {
+                const root = document.documentElement
+                const media = matchMedia("(prefers-color-scheme: dark)")
+                const storageKey = "vite-ui-theme"
+                let preference = "system"
+                try { preference = localStorage.getItem(storageKey) || preference } catch {}
+                const apply = () => {
+                    const explicit = preference === "light" || preference === "dark"
+                    root.dataset.theme = explicit ? preference : "system"
+                    const dark = explicit ? preference === "dark" : media.matches
+                    root.classList.toggle("dark", dark)
+                    root.classList.toggle("light", !dark)
+                    root.style.colorScheme = dark ? "dark" : "light"
+                }
+                apply()
+                media.addEventListener("change", apply)
+                window.setZoolTheme = (next) => {
+                    preference = next
+                    apply()
+                    try { localStorage.setItem(storageKey, next) } catch {}
+                }
+            })()
+        </script>
         <link rel="shortcut icon" type="image/svg+xml" href="/logo.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>哪吒监控 Nezha Monitoring</title>

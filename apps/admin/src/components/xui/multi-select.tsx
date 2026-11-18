@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { type VariantProps, cva } from "class-variance-authority"
 import { CheckIcon, ChevronDown, WandSparkles, XIcon } from "lucide-react"
@@ -45,7 +46,7 @@ import { KeyboardEvent, forwardRef, useState } from "react"
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
 const multiSelectVariants = cva(
-    "m-1 transition ease-in-out delay-150 hover:-translate-y-1 duration-300",
+    "max-w-full transition ease-in-out delay-150 hover:-translate-y-1 duration-300",
     {
         variants: {
             variant: {
@@ -137,7 +138,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
             onValueChange,
             variant,
             defaultValue = [],
-            placeholder = "Select options",
+            placeholder,
             animation = 0,
             maxCount = 3,
             modalPopover = false,
@@ -146,6 +147,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
         },
         ref,
     ) => {
+        const { t } = useTranslation()
         const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue)
         const [isPopoverOpen, setIsPopoverOpen] = useState(false)
         const [isAnimating, setIsAnimating] = useState(false)
@@ -210,13 +212,13 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                         {...props}
                         onClick={handleTogglePopover}
                         className={cn(
-                            "flex w-full p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
+                            "flex w-full min-w-0 [contain:inline-size] p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
                             className,
                         )}
                     >
                         {selectedValues.length > 0 ? (
                             <div className="flex justify-between items-center w-full">
-                                <div className="flex flex-wrap items-center">
+                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 p-1">
                                     {selectedValues.slice(0, maxCount).map((value) => {
                                         const option = options.find((o) => o.value === value)
                                         const IconComponent = option?.icon
@@ -232,7 +234,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                                                 {IconComponent && (
                                                     <IconComponent className="h-4 w-4 mr-2" />
                                                 )}
-                                                {option?.label}
+                                                <span className="truncate" title={option?.label}>{option?.label}</span>
                                                 <XIcon
                                                     className="ml-2 h-2 w-2 cursor-pointer"
                                                     onClick={(event) => {
@@ -263,7 +265,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                                         </Badge>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-between">
+                                <div className="flex shrink-0 items-center justify-between">
                                     <XIcon
                                         className="h-4 mx-2 cursor-pointer text-muted-foreground"
                                         onClick={(event) => {
@@ -280,8 +282,8 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                             </div>
                         ) : (
                             <div className="flex items-center justify-between w-full mx-auto">
-                                <span className="text-sm text-muted-foreground mx-3">
-                                    {placeholder}
+                                <span className="min-w-0 truncate text-sm text-muted-foreground mx-3">
+                                    {placeholder ?? t("SelectOptions")}
                                 </span>
                                 <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
                             </div>
@@ -289,16 +291,16 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-auto p-0"
+                    className="w-auto max-w-[var(--radix-popover-content-available-width)] p-0"
                     align="start"
                     onEscapeKeyDown={() => setIsPopoverOpen(false)}
                     onWheel={stopWheelEventPropagation}
                     onTouchMove={stopTouchMoveEventPropagation}
                 >
                     <Command>
-                        <CommandInput placeholder="Search..." onKeyDown={handleInputKeyDown} />
+                        <CommandInput placeholder={t("Search")} onKeyDown={handleInputKeyDown} />
                         <CommandList>
-                            <CommandEmpty>No results found.</CommandEmpty>
+                            <CommandEmpty>{t("NoResults")}</CommandEmpty>
                             <CommandGroup>
                                 <CommandItem
                                     key="all"
@@ -338,7 +340,7 @@ export const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                                             {option.icon && (
                                                 <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                                             )}
-                                            <span>{option.label}</span>
+                                            <span className="min-w-0 [overflow-wrap:anywhere]">{option.label}</span>
                                         </CommandItem>
                                     )
                                 })}

@@ -38,7 +38,7 @@ export default function Root() {
     }
 
     return (
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProvider>
             <section className="text-sm mx-auto h-full flex flex-col justify-between">
                 <div>
                     <Header />
