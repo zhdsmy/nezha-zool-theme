@@ -2,6 +2,7 @@ import Header from "@/components/header"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import useSetting from "@/hooks/useSetting"
+import i18n from "@/lib/i18n"
 import { InjectContext } from "@/lib/inject"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
@@ -20,6 +21,13 @@ export default function Root() {
             InjectContext(settingData?.config?.custom_code_dashboard)
         }
     }, [settingData?.config?.custom_code_dashboard])
+
+    // A browser without a saved interface language starts in the site language once.
+    useEffect(() => {
+        if (settingData?.config?.language && !localStorage.getItem("language")) {
+            i18n.changeLanguage(settingData.config.language)
+        }
+    }, [settingData?.config?.language])
 
     if (error) {
         throw error
