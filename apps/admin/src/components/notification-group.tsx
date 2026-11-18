@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createNotificationGroup, updateNotificationGroup } from "@/api/notification-group"
 import { Button } from "@/components/ui/button"
 import {
@@ -62,7 +63,8 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: z.infer<typeof notificationGroupFormSchema>) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: z.infer<typeof notificationGroupFormSchema>) => {
         try {
             if (data?.group.id) {
                 await updateNotificationGroup(data.group.id, values)
@@ -72,14 +74,14 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const { notifiers } = useNotification()
     const notifierList = notifiers?.map((n) => ({
@@ -140,7 +142,7 @@ export const NotificationGroupCard: React.FC<NotificationGroupCardProps> = ({ da
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

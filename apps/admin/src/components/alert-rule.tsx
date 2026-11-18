@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createAlertRule, updateAlertRule } from "@/api/alert-rule"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -150,7 +151,8 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
 
     const rulesRaw = useWatch({ control: form.control, name: "rules_raw" })
 
-    const onSubmit = async (values: AlertRuleFormData) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: AlertRuleFormData) => {
         values.rules = z.array(ruleSchema).parse(JSON.parse(values.rules_raw))
         values.fail_trigger_tasks = conv.strToArr(values.fail_trigger_tasks_raw).map(Number)
         values.recover_trigger_tasks = conv.strToArr(values.recover_trigger_tasks_raw).map(Number)
@@ -165,14 +167,14 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const { notifierGroup } = useNotification()
     const ngroupList = notifierGroup?.map((ng) => ({
@@ -731,7 +733,7 @@ export const AlertRuleCard: React.FC<AlertRuleCardProps> = ({ data, mutate }) =>
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

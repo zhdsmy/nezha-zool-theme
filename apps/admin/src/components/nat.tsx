@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createNAT, updateNAT } from "@/api/nat"
 import { Button } from "@/components/ui/button"
 import {
@@ -75,7 +76,8 @@ export const NATCard: React.FC<NATCardProps> = ({ data, mutate }) => {
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: NatFormData) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: NatFormData) => {
         try {
             if (data?.id) {
                 await updateNAT(data.id, values)
@@ -93,7 +95,7 @@ export const NATCard: React.FC<NATCardProps> = ({ data, mutate }) => {
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -199,7 +201,7 @@ export const NATCard: React.FC<NATCardProps> = ({ data, mutate }) => {
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

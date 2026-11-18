@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createServerGroup, updateServerGroup } from "@/api/server-group"
 import { Button } from "@/components/ui/button"
 import {
@@ -62,7 +63,8 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: z.infer<typeof serverGroupFormSchema>) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: z.infer<typeof serverGroupFormSchema>) => {
         try {
             if (data?.group.id) {
                 await updateServerGroup(data.group.id, values)
@@ -72,14 +74,14 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const { servers } = useServer()
     const serverList = servers?.map((s) => ({
@@ -142,7 +144,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

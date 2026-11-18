@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import {
     ApiTokenCreateResponse,
     ApiTokenView,
@@ -182,13 +183,13 @@ function CreateApiTokenDialog({
     const [scopes, setScopes] = useState<string[]>([])
     const [serverIDs, setServerIDs] = useState("")
     const [expiresInDays, setExpiresInDays] = useState<string>("90")
-    const [submitting, setSubmitting] = useState(false)
+    const { submitting, runSubmit } = useSubmitLock()
 
     const toggleScope = (s: string) => {
         setScopes((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))
     }
 
-    const submit = async () => {
+    const submit = runSubmit(async () => {
         if (!name.trim()) {
             toast(t("Error"), { description: t("NameRequired") })
             return
@@ -209,7 +210,6 @@ function CreateApiTokenDialog({
             return
         }
         const expDays = expRes.value
-        setSubmitting(true)
         try {
             const res = await createApiToken({
                 name: name.trim(),
@@ -225,10 +225,8 @@ function CreateApiTokenDialog({
             setExpiresInDays("90")
         } catch (e: any) {
             toast(t("Error"), { description: e.message })
-        } finally {
-            setSubmitting(false)
         }
-    }
+    })
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

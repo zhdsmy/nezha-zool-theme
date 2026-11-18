@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createDDNSProfile, updateDDNSProfile } from "@/api/ddns"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -114,7 +115,8 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: DDNSFormData) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: DDNSFormData) => {
         try {
             values.domains = conv.strToArr(values.domains_raw)
             if (data?.id) {
@@ -125,14 +127,14 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -402,7 +404,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

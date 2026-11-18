@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { getProfile, updateProfile } from "@/api/user"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -57,13 +58,14 @@ export const ProfileCard = ({ className }: { className: string }) => {
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: any) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: any) => {
         try {
             await updateProfile(values)
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
@@ -71,7 +73,7 @@ export const ProfileCard = ({ className }: { className: string }) => {
         setProfile(profile)
         setOpen(false)
         form.reset()
-    }
+    })
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -155,7 +157,7 @@ export const ProfileCard = ({ className }: { className: string }) => {
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

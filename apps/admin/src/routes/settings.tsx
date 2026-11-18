@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { updateSettings } from "@/api/settings"
 import { SettingsTab } from "@/components/settings-tab"
 import { Button } from "@/components/ui/button"
@@ -62,6 +63,7 @@ const settingFormSchema = z.object({
 
 export default function SettingsPage() {
     const { t, i18n } = useTranslation()
+    const { submitting, runSubmit } = useSubmitLock()
     const { data: config, mutate } = useSetting()
     const { profile, loading: authLoading } = useAuth()
 
@@ -120,7 +122,7 @@ export default function SettingsPage() {
         return <Navigate to="/dashboard/settings/api-tokens" replace />
     }
 
-    const onSubmit = async (values: any) => {
+    const onSubmit = runSubmit(async (values: any) => {
         try {
             await updateSettings({
                 ...values,
@@ -144,7 +146,7 @@ export default function SettingsPage() {
             i18n.changeLanguage(values.language)
         }
         toast(t("Success"))
-    }
+    })
 
     return (
         <div className="px-3">
@@ -620,7 +622,7 @@ export default function SettingsPage() {
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit">{t("Confirm")}</Button>
+                        <Button disabled={submitting} type="submit">{t("Confirm")}</Button>
                     </form>
                 </Form>
             </div>
