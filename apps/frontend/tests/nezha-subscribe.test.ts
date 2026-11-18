@@ -163,3 +163,29 @@ it('ignores group responses from a previous connection after reset', async () =>
   expect(events[0].nodes?.every(n => !n.groups.length)).toBe(true)
   stop()
 })
+
+it('drops first-frame notes on a new socket even if the same node reconnects without a note', async () => {
+  nezha.reset!()
+  let active!: FakeSocket
+  vi.stubGlobal('WebSocket', class {
+    constructor() { active = this as unknown as FakeSocket }
+    close() {}
+  })
+  vi.stubGlobal('fetch', async () => Response.json(groups))
+  const events: LiveEvent[] = []
+  const stop = nezha.subscribe(e => events.push(e))
+  const node = { id: 1, name: 'same' }
+  const send = (server: typeof node & { public_note?: string }) =>
+    active.onmessage!({ data: JSON.stringify({ now: 100, servers: [server] }) })
+  active.onopen!()
+  send({ ...node, public_note: '{"billingDataMod":{"amount":"USD 20"}}' })
+  send(node)
+  expect(events.at(-1)?.nodes?.[0].price).toBe(20)
+  active.onclose!()
+  await vi.advanceTimersByTimeAsync(2_000)
+  active.onopen!()
+  send(node)
+  expect(events.at(-1)?.nodes?.[0].price).toBe(0)
+  stop()
+  nezha.reset!()
+})
