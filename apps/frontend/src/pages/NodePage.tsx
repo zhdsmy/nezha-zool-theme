@@ -803,7 +803,7 @@ export function NodePage({ id }: { id: string }) {
         </div>
       )}
 
-      {node.note && <p className="node-note mt-10 max-w-[70ch] text-[14px] leading-relaxed whitespace-pre-line text-muted">{node.note}</p>}
+      {node.note && <p className="node-note mt-10 max-w-[70ch] wrap-anywhere text-[14px] leading-relaxed whitespace-pre-line text-muted">{node.note}</p>}
 
       <NodeCharts key={node.id} node={node} snap={snap} />
     </div>

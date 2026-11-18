@@ -37,3 +37,10 @@ it('labels latency legend and detail readings with the same precision and unit',
     expect(page).toContain(`formatLatency(${reading})`)
   }
 })
+
+it('lets long public notes and the search field fit a narrow viewport', () => {
+  const node = readFileSync(new URL('../src/pages/NodePage.tsx', import.meta.url), 'utf8')
+  const search = readFileSync(new URL('../src/components/SearchDialog.tsx', import.meta.url), 'utf8')
+  expect(node).toMatch(/node-note[^"]*wrap-anywhere/)
+  expect(search).toMatch(/<input\b[^>]*(?:[\s\S]*?)className="[^"]*min-w-0[^"]*flex-1/)
+})
