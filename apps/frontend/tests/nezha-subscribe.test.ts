@@ -41,7 +41,7 @@ it('keeps groups on the first live event after loadNodes (no flicker)', async ()
   // Deliver the socket's first frame without waiting for a real event-loop tick.
   await vi.advanceTimersByTimeAsync(0)
   const nodes = await loading
-  expect(vi.getTimerCount()).toBe(0)
+  expect(vi.getTimerCount()).toBe(1) // the stream inactivity timer
   const grouped = nodes.filter((n) => n.groups.length).length
   expect(grouped).toBeGreaterThan(10)
 
@@ -98,4 +98,33 @@ it('retries an unsuccessful group response on the next load', async () => {
   await vi.advanceTimersByTimeAsync(0)
   expect((await retry).some(n => n.groups.length)).toBe(true)
   expect(fetch).toHaveBeenCalledTimes(2)
+})
+
+it('waits for a valid frame and reconnects after silence or malformed frames', async () => {
+  nezha.reset!()
+  const sockets: FakeSocket[] = []
+  vi.stubGlobal('WebSocket', class {
+    constructor() { sockets.push(this as unknown as FakeSocket) }
+    close() {}
+  })
+  const events: LiveEvent[] = [], status: string[] = []
+  const stop = nezha.subscribe(e => events.push(e), s => status.push(s))
+  const socket = sockets[0]
+  socket.onopen!()
+  socket.onmessage!({ data: '{"servers":[]}' })
+  expect(status).not.toContain('open')
+  expect(events).toHaveLength(0)
+  socket.onmessage!({ data: '{"now":100}' }) // Nezha omits an empty fleet.
+  expect(events.at(-1)?.nodes).toEqual([])
+  expect(status.at(-1)).toBe('open')
+  await vi.advanceTimersByTimeAsync(29_000)
+  socket.onmessage!({ data: 'broken' })
+  await vi.advanceTimersByTimeAsync(1_000)
+  expect(status.at(-1)).toBe('closed')
+  await vi.advanceTimersByTimeAsync(2_000)
+  expect(sockets).toHaveLength(2)
+  socket.onmessage!({ data: '{"now":200}' })
+  expect(events).toHaveLength(1)
+  stop()
+  nezha.reset!()
 })

@@ -351,10 +351,13 @@ const hub = (() => {
       },
       onMessage: (text) => {
         try {
-          last = JSON.parse(text) as NezhaFrame
-          listeners.forEach((l) => l(last!))
+          const frame = JSON.parse(text) as NezhaFrame
+          if (!Number.isFinite(frame?.now) || (frame.servers !== undefined && !Array.isArray(frame.servers))) return false
+          last = frame
+          listeners.forEach((l) => l(frame))
+          return true
         } catch {
-          /* ignore */
+          return false
         }
       },
     })
