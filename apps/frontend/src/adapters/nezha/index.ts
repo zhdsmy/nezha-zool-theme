@@ -319,7 +319,7 @@ export function mapFrame(
   const nodes: NodeInfo[] = []
   for (const s of servers) {
     const id = String(s.id)
-    if (s.public_note) notes.set(id, s.public_note)
+    if (s.public_note !== undefined) notes.set(id, s.public_note)
     snapshots[id] = mapState(s, now)
     nodes.push(mapServer(s, groups, notes.get(id)))
   }
@@ -341,6 +341,10 @@ const hub = (() => {
     if (socket) return
     socket = resilientSocket({
       url: () => wsUrl('/api/v1/ws/server'),
+      onOpen: () => {
+        last = null
+        publicNotes.clear()
+      },
       onStatus: (s) => {
         status = s
         statusListeners.forEach((l) => l(s))
@@ -378,6 +382,7 @@ const hub = (() => {
     reset() {
       socket?.close()
       socket = null
+      publicNotes.clear()
       last = null
       status = 'connecting'
     },

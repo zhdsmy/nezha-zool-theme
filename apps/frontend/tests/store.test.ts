@@ -160,3 +160,12 @@ describe('store: fed and refresh', () => {
     fake.failPrivateLoad = false
   })
 })
+
+it('publishes changed billing metadata for the same node', async () => {
+  const { start, getState } = await import('../src/app/store')
+  await start()
+  for (const price of [25, 0]) {
+    fake.listeners.forEach(l => l({ snapshots: {}, nodes: [{ ...fake.node('a'), price }] }))
+    expect(getState().nodes[0].price).toBe(price)
+  }
+})

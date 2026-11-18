@@ -137,7 +137,10 @@ function pushLive(snapshots: Record<string, Snapshot>) {
 /* ---------- lifecycle ---------- */
 
 const sameNodes = (a: NodeInfo[], b: NodeInfo[]) =>
-  a.length === b.length && a.every((n, i) => n.id === b[i].id && n.name === b[i].name && n.groups.join() === b[i].groups.join())
+  a.length === b.length && a.every((n, i) => (Object.keys(n) as (keyof NodeInfo)[]).every((key) => {
+    const x = n[key], y = b[i][key]
+    return x === y || (Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every((v, j) => v === y[j]))
+  }))
 
 let unsubscribe: (() => void) | null = null
 let refreshTimer: ReturnType<typeof setTimeout> | undefined

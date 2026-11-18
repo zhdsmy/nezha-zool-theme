@@ -43,6 +43,8 @@ describe('nezha adapter', () => {
     const second = mapFrame({ now: Date.now(), servers: [server] }, new Map(), notes)
     expect(first.nodes[0].price).toBe(36)
     expect(second.nodes[0]).toMatchObject({ price: 36, billingCycle: 30 })
+    const cleared = mapFrame({ now: Date.now(), servers: [{ ...server, public_note: '' }] }, new Map(), notes)
+    expect(cleared.nodes[0].price).toBe(0)
   })
 
   it('parses billing from public_note', () => {
