@@ -10,9 +10,9 @@ export interface Parts {
 /** Binary (1024) byte formatting, split so the unit can be styled on its own. */
 export function splitBytes(bytes: number, digits?: number): Parts {
   if (!Number.isFinite(bytes) || bytes <= 0) return { value: '0', unit: 'B' }
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), BYTE_UNITS.length - 1)
+  const i = Math.min(Math.floor(Math.log(Math.max(1, bytes)) / Math.log(1024)), BYTE_UNITS.length - 1)
   const v = bytes / 1024 ** i
-  const d = digits ?? (i === 0 || v >= 100 ? 0 : v >= 10 ? 1 : 2)
+  const d = digits ?? (v < 1 ? 2 : i === 0 || v >= 100 ? 0 : v >= 10 ? 1 : 2)
   return { value: v.toFixed(d), unit: BYTE_UNITS[i] }
 }
 

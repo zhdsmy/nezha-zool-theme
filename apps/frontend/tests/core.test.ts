@@ -8,6 +8,8 @@ import { spikeLimit, summariseDay } from '../src/core/summary'
 describe('format', () => {
   it('formats bytes with sensible precision', () => {
     expect(formatBytes(0)).toBe('0 B')
+    expect(formatBytes(0.5)).toBe('0.50 B')
+    expect(splitSpeed(0.25)).toEqual({ value: '0.25', unit: 'B/s' })
     expect(formatBytes(512)).toBe('512 B')
     expect(formatBytes(1536)).toBe('1.50 KB')
     expect(formatBytes(125 * 1024 ** 4)).toBe('125 TB')
