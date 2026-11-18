@@ -145,21 +145,24 @@ function useWeekHistory(id: string) {
 }
 
 function useDaySummary(id: string, snap: Snapshot | undefined) {
-  const [midnight, setMidnight] = useState(() => new Date().setHours(0, 0, 0, 0))
-  useEffect(() => watchDay(setMidnight), [])
-  const key = `${id}:${midnight}`
-  const [result, setResult] = useState<{ key: string; points: HistoryPoint[] } | null>(null)
-  const points = result?.key === key ? result.points : null
+  const supported = useStore(s => Boolean(s.site?.recordHours)) && adapter.capabilities.history
+  const midnight = new Date().setHours(0, 0, 0, 0)
+  const [result, setResult] = useState<{ id: string; day: number; points: HistoryPoint[] } | null>(null)
+  const points = result?.id === id && result.day === midnight ? result.points : null
   const [nonce, setNonce] = useState(0)
   useEffect(() => {
-    if (!adapter.capabilities.history) return
-    const ctrl = new AbortController()
-    adapter
-      .loadHistory(id, 24, ctrl.signal)
-      .then((points) => !ctrl.signal.aborted && setResult({ key, points }))
-      .catch(() => !ctrl.signal.aborted && setResult({ key, points: [] }))
-    return () => ctrl.abort()
-  }, [id, key, nonce])
+    if (!supported) return
+    let current: AbortController
+    const stop = watchDay(day => {
+      current?.abort()
+      current = new AbortController()
+      const { signal } = current
+      adapter.loadHistory(id, 24, signal).then(points => {
+        if (!signal.aborted) setResult({ id, day, points })
+      }).catch(() => {})
+    })
+    return () => { stop(); current?.abort() }
+  }, [id, nonce, supported])
   // Wait for a live snapshot: today's traffic is measured against its counters.
   const summary = points && points.length && snap ? summariseDay(points, [...getCounters(id), snap], midnight) : null
   return { summary, refresh: () => setNonce((n) => n + 1) }

@@ -11,6 +11,8 @@ it('refreshes at local midnight and when a suspended tab resumes', () => {
     const stop = watchDay(changed)
     vi.advanceTimersByTime(1_000)
     expect(changed).toHaveBeenLastCalledWith(+new Date(2026, 10, 19))
+    vi.advanceTimersByTime(5 * 60_000)
+    expect(changed).toHaveBeenCalledTimes(3)
     vi.setSystemTime(new Date(2026, 10, 21, 10))
     events.dispatchEvent(new Event('visibilitychange'))
     expect(changed).toHaveBeenLastCalledWith(+new Date(2026, 10, 21))
