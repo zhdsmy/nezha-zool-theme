@@ -142,3 +142,24 @@ it('cancels every in-flight request for the discarded metric view', async () => 
   expect(signals.every(s => s.aborted)).toBe(true)
   for (const result of await Promise.allSettled(pending)) expect(result).toMatchObject({ status: 'rejected', reason: { name: 'AbortError' } })
 })
+
+it('ignores group responses from a previous connection after reset', async () => {
+  nezha.reset!()
+  vi.stubGlobal('WebSocket', FakeSocket)
+  let finish!: (res: Response) => void
+  vi.stubGlobal('fetch', vi.fn()
+    .mockReturnValueOnce(new Promise<Response>(resolve => { finish = resolve }))
+    .mockResolvedValueOnce(Response.json({ success: true, data: [] })))
+  const stopOld = nezha.subscribe(() => {})
+  nezha.reset!()
+  stopOld()
+  const fresh = nezha.loadNodes()
+  await vi.advanceTimersByTimeAsync(0)
+  await fresh
+  finish(Response.json(groups))
+  await vi.advanceTimersByTimeAsync(0)
+  const events: LiveEvent[] = []
+  const stop = nezha.subscribe(e => events.push(e))
+  expect(events[0].nodes?.every(n => !n.groups.length)).toBe(true)
+  stop()
+})
