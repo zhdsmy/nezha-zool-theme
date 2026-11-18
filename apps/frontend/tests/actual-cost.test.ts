@@ -6,6 +6,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('private actual expenses', () => {
   it('parses ISO amounts and preserves a real zero', () => {
     expect(parseActualCost('{"billingDataMod":{"actualAmount":"CNY 0.00"}}')).toEqual({ amount: 0, currency: 'CNY' })
+    expect(parseActualCost('{"billingDataMod":{"actualAmount":"12.50 HK$"}}')).toEqual({ amount: 12.5, currency: 'HKD' })
     expect(parseActualCost('{"billingDataMod":{"actualAmount":"usd 12.50"}}')).toEqual({ amount: 12.5, currency: 'USD' })
   })
 

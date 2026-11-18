@@ -150,3 +150,11 @@ describe('nezha mergeMetrics', () => {
 it.each([[' 1 ', 'up'], ['2', 'sum'], ['3', 'max'], ['', 'max']])('maps traffic mode %j to %s', (trafficType, expected) => {
   expect(parsePublicNote(JSON.stringify({ planDataMod: { trafficType } })).trafficLimitType).toBe(expected)
 })
+
+it('reads embedded cycles, counted units and legacy billing symbols', () => {
+  const note = (amount: string, cycle?: string) => parsePublicNote(JSON.stringify({ billingDataMod: { amount, cycle }, planDataMod: { trafficVol: '1TB/2Week' } }))
+  expect(note('HK$15/3Month')).toMatchObject({ price: 15, currency: 'HK$', billingCycle: 90, trafficLimitPeriod: 14 })
+  expect(note('HK$15/3Month', 'Year').billingCycle).toBe(365)
+  expect(note('HK$15/3Month', 'invalid').billingCycle).toBe(0)
+  expect(note('HK$15/0Month').price).toBe(0)
+})

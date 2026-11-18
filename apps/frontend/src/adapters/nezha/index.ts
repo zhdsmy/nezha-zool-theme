@@ -11,6 +11,7 @@ import type {
   SiteInfo,
   Snapshot,
 } from '@/core/model'
+import { currencyCode } from '@/core/format'
 import { flagToRegion } from '@/core/region'
 
 /* ---------- API shapes (Nezha dashboard v1, tested on v2.0.13) ---------- */
@@ -120,29 +121,41 @@ export function parseActualCost(note: unknown): ActualCost | undefined {
   if (typeof note !== 'string') return
   try {
     const amount = text(JSON.parse(note)?.billingDataMod?.actualAmount)
-    const match = /^([A-Z]{3})\s+(\d+(?:\.\d+)?)$/i.exec(amount)
-    if (match && Number.isFinite(Number(match[2]))) {
-      return { currency: match[1].toUpperCase(), amount: Number(match[2]) }
-    }
+    const match = /^([^\d\s.,+-]*)\s*(\d+(?:\.\d+)?)\s*([^\d\s.,+-]*)$/.exec(amount)
+    if (!match || (match[1] && match[3])) return
+    const currency = currencyCode(match[1] || match[3])
+    if (currency && Number.isFinite(Number(match[2]))) return { currency, amount: Number(match[2]) }
   } catch {
     /* Empty, plain-text or malformed private notes keep the displayed price. */
   }
 }
 
 const CYCLES: [RegExp, number][] = [
-  [/^(月|mo|month|monthly|m)$/i, 30],
-  [/^(季|季度|q|quarter|quarterly)$/i, 90],
-  [/^(半年|half|semi|semiannual|h)$/i, 182],
-  [/^(年|y|yr|year|yearly|annual|annually)$/i, 365],
-  [/^(两年|二年|2y|biennial)$/i, 730],
-  [/^(三年|3y|triennial)$/i, 1095],
+  [/^(d|days?|daily|天|日|日間|每天|每日)$/i, 1],
+  [/^(w|wk|weeks?|weekly|周|週|週間|每周|每週)$/i, 7],
+  [/^(m|mo|months?|monthly|月|个月|個月|か月|ヶ月|箇月|每月|毎月)$/i, 30],
+  [/^(q|qr|quarter|quarterly|季|季度)$/i, 90],
+  [/^(h|half|half-?year|semi|semi-?annual(?:ly)?|半|半年)$/i, 182],
+  [/^(y|yr|years?|yearly|annual|annually|年|年間|每年|毎年)$/i, 365],
+  [/^(两年|兩年|二年|biennial)$/i, 730],
+  [/^(三年|triennial)$/i, 1095],
 ]
+
+function cycleDays(value: string) {
+  const match = /^(\d+)?([^\d]+)$/.exec(value.replace(/\s/g, ''))
+  if (!match) return
+  const unit = CYCLES.find(([re]) => re.test(match[2]))?.[1]
+  const count = Number(match[1] ?? 1)
+  if (!unit || count < 1 || !Number.isSafeInteger(count * unit)) return
+  if (unit === 30 && count === 6) return 182
+  return unit === 30 && count % 12 === 0 ? count / 12 * 365 : count * unit
+}
 
 const SIZE = /^(\d+(?:\.\d+)?)\s*([KMGTP]?)i?B?$/i
 const text = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 
 function parseSize(v = ''): number {
-  if (/^(unlimited|unmetered|不限|无限(?:流量)?)$/i.test(v.trim())) return 0
+  if (/^(unlimited|unmetered|不限|[无無]限(?:流量)?)$/i.test(v.trim())) return 0
   const m = SIZE.exec(v.trim())
   if (!m) return -1
   const pow = ' KMGTP'.indexOf((m[2] || ' ').toUpperCase())
@@ -175,7 +188,9 @@ export function parsePublicNote(note: string | undefined) {
   }
   const b = parsed.billingDataMod
   if (b) {
-    const amount = text(b.amount)
+    const [raw, period, ...rest] = text(b.amount).split('/')
+    const embedded = period === undefined ? undefined : cycleDays(period)
+    const amount = rest.length || (period !== undefined && !embedded) ? '' : raw.trim()
     const num = /-?\d+(?:\.\d+)?/.exec(amount)
     if (amount === '-1') out.price = -2
     else if (amount === '0' || /free|免费/i.test(amount)) out.price = -1
@@ -186,16 +201,16 @@ export function parsePublicNote(note: string | undefined) {
         out.currency = amount.replace(num[0], '').trim().slice(0, 4) || '$'
       }
     }
-    out.billingCycle = CYCLES.find(([re]) => re.test(text(b.cycle)))?.[1] ?? 0
+    out.billingCycle = (text(b.cycle) ? cycleDays(text(b.cycle)) : embedded) ?? 0
     out.autoRenewal = text(b.autoRenewal) === '1'
     const endDate = text(b.endDate)
-    const end = Date.parse(endDate)
+    const end = Date.parse(endDate.replace(/^(\d{4}-\d\d-\d\d) /, '$1T'))
     out.expiredAt = endDate.startsWith('0000-00-00') ? 0 : Number.isFinite(end) && new Date(end).getUTCFullYear() > 2000 ? end : null
   }
   const p = parsed.planDataMod
   if (p) {
     const parts = text(p.trafficVol).split('/')
-    const period = parts.length === 2 ? CYCLES.find(([re]) => re.test(parts[1].trim()))?.[1] : 0
+    const period = parts.length === 2 ? cycleDays(parts[1]) : 0
     if (parts.length <= 2 && period !== undefined) {
       out.trafficLimit = parseSize(parts[0])
       out.trafficLimitPeriod = out.trafficLimit > 0 ? period : 0
