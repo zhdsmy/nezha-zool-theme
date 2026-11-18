@@ -1,6 +1,6 @@
 {
   "name": "nezha-zool-theme",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A Nezha dashboard theme (public frontend + admin) in the ZOOL visual language.",
   "license": "MIT",
