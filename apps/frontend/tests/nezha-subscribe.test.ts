@@ -128,3 +128,17 @@ it('waits for a valid frame and reconnects after silence or malformed frames', a
   stop()
   nezha.reset!()
 })
+
+it('cancels every in-flight request for the discarded metric view', async () => {
+  const signals: AbortSignal[] = []
+  vi.stubGlobal('fetch', (_url: string, init: RequestInit) => new Promise<Response>((_, reject) => {
+    signals.push(init.signal!)
+    init.signal!.addEventListener('abort', () => reject(init.signal!.reason), { once: true })
+  }))
+  const ctrl = new AbortController()
+  const pending = [nezha.loadHistory('1', 24, ctrl.signal), nezha.loadRecent('1', 15, ctrl.signal), nezha.loadPing('1', 1, ctrl.signal)]
+  expect(signals.length).toBeGreaterThan(3)
+  ctrl.abort()
+  expect(signals.every(s => s.aborted)).toBe(true)
+  for (const result of await Promise.allSettled(pending)) expect(result).toMatchObject({ status: 'rejected', reason: { name: 'AbortError' } })
+})

@@ -15,7 +15,7 @@ export async function request<T>(url: string, init: RequestInit = {}, timeoutMs 
       credentials: 'same-origin',
       ...init,
       headers: { accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}), ...init.headers },
-      signal: ctrl.signal,
+      signal: init.signal ? AbortSignal.any([init.signal, ctrl.signal]) : ctrl.signal,
     })
     const text = await res.text()
     let body: unknown = text

@@ -134,14 +134,12 @@ function useWeekHistory(id: string) {
   const [points, setPoints] = useState<HistoryPoint[] | null>(null)
   useEffect(() => {
     if (!supported) return
-    let cancelled = false
+    const ctrl = new AbortController()
     adapter
-      .loadHistory(id, 168)
-      .then((p) => !cancelled && setPoints(p))
-      .catch(() => !cancelled && setPoints([]))
-    return () => {
-      cancelled = true
-    }
+      .loadHistory(id, 168, ctrl.signal)
+      .then((p) => !ctrl.signal.aborted && setPoints(p))
+      .catch(() => !ctrl.signal.aborted && setPoints([]))
+    return () => ctrl.abort()
   }, [id, supported])
   return supported ? points : null
 }
@@ -155,14 +153,12 @@ function useDaySummary(id: string, snap: Snapshot | undefined) {
   const [nonce, setNonce] = useState(0)
   useEffect(() => {
     if (!adapter.capabilities.history) return
-    let cancelled = false
+    const ctrl = new AbortController()
     adapter
-      .loadHistory(id, 24)
-      .then((points) => !cancelled && setResult({ key, points }))
-      .catch(() => !cancelled && setResult({ key, points: [] }))
-    return () => {
-      cancelled = true
-    }
+      .loadHistory(id, 24, ctrl.signal)
+      .then((points) => !ctrl.signal.aborted && setResult({ key, points }))
+      .catch(() => !ctrl.signal.aborted && setResult({ key, points: [] }))
+    return () => ctrl.abort()
   }, [id, key, nonce])
   // Wait for a live snapshot: today's traffic is measured against its counters.
   const summary = points && points.length && snap ? summariseDay(points, [...getCounters(id), snap], midnight) : null
@@ -393,28 +389,24 @@ function NodeCharts({ node, snap }: { node: NodeInfo; snap?: Snapshot }) {
 
   useEffect(() => {
     if (tab !== 'load' || range === 0) return
-    let cancelled = false
+    const ctrl = new AbortController()
     setError(false)
     adapter
-      .loadHistory(node.id, range)
-      .then((points) => !cancelled && setHistory({ key: historyKey, points }))
-      .catch(() => !cancelled && setError(true))
-    return () => {
-      cancelled = true
-    }
+      .loadHistory(node.id, range, ctrl.signal)
+      .then((points) => !ctrl.signal.aborted && setHistory({ key: historyKey, points }))
+      .catch(() => !ctrl.signal.aborted && setError(true))
+    return () => ctrl.abort()
   }, [tab, range, node.id, historyKey])
 
   useEffect(() => {
     if (tab !== 'ping' || !adapter.capabilities.ping) return
-    let cancelled = false
+    const ctrl = new AbortController()
     setError(false)
     adapter
-      .loadPing(node.id, pingRange)
-      .then((data) => !cancelled && setPing({ key: pingKey, data }))
-      .catch(() => !cancelled && setError(true))
-    return () => {
-      cancelled = true
-    }
+      .loadPing(node.id, pingRange, ctrl.signal)
+      .then((data) => !ctrl.signal.aborted && setPing({ key: pingKey, data }))
+      .catch(() => !ctrl.signal.aborted && setError(true))
+    return () => ctrl.abort()
   }, [tab, pingRange, node.id, pingKey])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -547,7 +539,9 @@ export function NodePage({ id }: { id: string }) {
   }, [nodeId, liveTick])
 
   useEffect(() => {
-    void backfillLive(nodeId)
+    const ctrl = new AbortController()
+    void backfillLive(nodeId, ctrl.signal)
+    return () => ctrl.abort()
   }, [nodeId])
 
   useEffect(() => {

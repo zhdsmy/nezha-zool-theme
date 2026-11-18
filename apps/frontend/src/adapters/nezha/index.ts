@@ -481,7 +481,13 @@ export function mergeMetrics(series: Partial<Record<keyof typeof METRICS, NezhaM
 
 /* ---------- adapter ---------- */
 
-export const nezha: MonitorAdapter = {
+interface NezhaAdapter extends MonitorAdapter {
+  loadHistory(id: string, hours: number, signal?: AbortSignal): Promise<HistoryPoint[]>
+  loadRecent(id: string, minutes: number, signal?: AbortSignal): Promise<HistoryPoint[]>
+  loadPing(id: string, hours: number, signal?: AbortSignal): Promise<PingData>
+}
+
+export const nezha: NezhaAdapter = {
   target: 'nezha',
   capabilities: { billing: true, trafficLimit: true, history: true, ping: true },
   adminUrl: '/dashboard',
@@ -545,22 +551,23 @@ export const nezha: MonitorAdapter = {
     groupsPromise = null
   },
 
-  async loadHistory(id, hours) {
+  async loadHistory(id, hours, signal) {
     const base = `/api/v1/server/${encodeURIComponent(id)}/metrics?period=${period(hours)}&metric=`
     const names = Object.keys(METRICS) as (keyof typeof METRICS)[]
-    const results = await Promise.all(names.map((m) => request<Common<NezhaMetricSeries>>(base + m, {}, 60_000).catch(() => null)))
+    const results = await Promise.all(names.map((m) => request<Common<NezhaMetricSeries>>(base + m, { signal }, 60_000).catch(() => null)))
+    signal?.throwIfAborted()
     if (!results[0]?.success) throw new Error('Nezha history unavailable')
     return mergeMetrics(Object.fromEntries(names.map((m, i) => [m, results[i]?.data])), Date.now() - hours * 3_600_000)
   },
 
-  async loadRecent(id, minutes) {
+  async loadRecent(id, minutes, signal) {
     const base = `/api/v1/server/${encodeURIComponent(id)}/metrics?period=1d&metric=`
-    const [up, down] = await Promise.all([request<Common<NezhaMetricSeries>>(base + 'net_out_speed'), request<Common<NezhaMetricSeries>>(base + 'net_in_speed')])
+    const [up, down] = await Promise.all([request<Common<NezhaMetricSeries>>(base + 'net_out_speed', { signal }), request<Common<NezhaMetricSeries>>(base + 'net_in_speed', { signal })])
     return mergeMetrics({ net_out_speed: up.data, net_in_speed: down.data }, Date.now() - minutes * 60_000)
   },
 
-  async loadPing(id, hours): Promise<PingData> {
-    const res = await request<Common<NezhaServiceInfo[]>>(`/api/v1/server/${encodeURIComponent(id)}/service?period=${period(hours)}`)
+  async loadPing(id, hours, signal): Promise<PingData> {
+    const res = await request<Common<NezhaServiceInfo[]>>(`/api/v1/server/${encodeURIComponent(id)}/service?period=${period(hours)}`, { signal })
     return mapServices(res.data ?? [], Date.now() - hours * 3_600_000)
   },
 

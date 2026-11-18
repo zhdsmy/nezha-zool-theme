@@ -188,14 +188,18 @@ function connect() {
  * Backfill the ledger sparks from server history so they are full on arrival instead of
  * drawing a sliver at the right edge for the first minutes.
  */
+let seedController: AbortController | undefined
+
 async function seedLive() {
   const { site, nodes } = state
   if (!adapter.loadRecent || !site?.recordHours) return
+  seedController = new AbortController()
+  const { signal } = seedController
   const queue = nodes.map((n) => n.id)
   const worker = async () => {
-    for (let id = queue.shift(); id; id = queue.shift()) {
-      const seed = await adapter.loadRecent!(id, 15).catch(() => [])
-      if (!seed.length) continue
+    for (let id = queue.shift(); id && !signal.aborted; id = queue.shift()) {
+      const seed = await adapter.loadRecent(id, 15, signal).catch(() => [])
+      if (signal.aborted || !seed.length) continue
       sparkSeeds.set(id, seed)
       set({ liveVersion: state.liveVersion + 1 })
     }
@@ -204,9 +208,10 @@ async function seedLive() {
 }
 
 /** Fill the 15 minutes before the page opened with complete history points, for the node page. */
-export async function backfillLive(id: string) {
+export async function backfillLive(id: string, signal?: AbortSignal) {
   if (!adapter.capabilities.history || !state.site?.recordHours) return
-  const points = await adapter.loadHistory(id, 1).catch(() => [])
+  const points = await adapter.loadHistory(id, 1, signal).catch(() => [])
+  if (signal?.aborted) return
   const buf = getLive(id)
   const first = buf[0]?.at ?? Infinity
   const older = points.filter((p) => p.at < first && p.at >= Date.now() - 15 * 60_000)
@@ -239,6 +244,7 @@ export async function refresh() {
   refreshTimer = setTimeout(() => set({ refreshing: false }), 10_000)
   unsubscribe?.()
   unsubscribe = null
+  seedController?.abort()
   adapter.reset?.()
   await load().catch((err) => console.error('[zool-theme] refresh failed', err))
   connect()
