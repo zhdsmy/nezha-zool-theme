@@ -113,7 +113,7 @@ export function App() {
         {t('app.skip')}
       </a>
       <Header />
-      <main id="main" className="min-h-[60dvh]">
+      <main id="main" tabIndex={-1} className="min-h-[60dvh]">
         <ErrorBoundary resetKey={pathname} fallback={<LoadError />}>
           {phase === 'loading' ? <Loading node={nodeId} /> : phase === 'error' ? <LoadError /> : nodeId ? <NodePage id={nodeId} /> : <HomePage />}
         </ErrorBoundary>
