@@ -180,7 +180,7 @@ export default function TransferPage() {
         <div className="px-3">
             <h1 className="mt-6 text-2xl font-semibold">{t("Transfer.Title")}</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{t("Transfer.PageHint")}</p>
-            <Table className="mt-6">
+            <Table className="mt-6" error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     <TableRow>
                         <TableHead>ID</TableHead>

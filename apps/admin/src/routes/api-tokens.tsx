@@ -79,7 +79,7 @@ export default function ApiTokensPage() {
                 <Button onClick={() => setCreateOpen(true)}>{t("CreateApiToken")}</Button>
             </div>
 
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     <TableRow>
                         <TableHead>{t("Name")}</TableHead>

@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import {
     HTMLAttributes,
@@ -9,8 +11,24 @@ import {
     useRef,
 } from "react"
 
-const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
-    ({ className, ...props }, ref) => {
+type LoadErrorProps = { error: unknown; onRetry: () => void }
+
+export function ResourceLoadError({ error, onRetry }: LoadErrorProps) {
+    const { t } = useTranslation()
+    return (
+        <div className="space-y-2 rounded-lg border bg-card p-4 text-center">
+            <p role="alert" className="text-destructive">
+                {(error instanceof Error ? error.message : String(error)) || t("Error")}
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={() => onRetry()}>
+                {t("Retry")}
+            </Button>
+        </div>
+    )
+}
+
+const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement> & Partial<LoadErrorProps>>(
+    ({ className, error, onRetry, ...props }, ref) => {
         const box = useRef<HTMLDivElement>(null)
         // Narrow screens show rows as cards; each cell labels itself with its column header.
         useLayoutEffect(() => {
@@ -22,6 +40,7 @@ const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
                 }),
             )
         })
+        if (error && onRetry) return <ResourceLoadError error={error} onRetry={onRetry} />
         return (
             <div
                 ref={box}

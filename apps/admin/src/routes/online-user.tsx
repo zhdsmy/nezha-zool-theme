@@ -250,7 +250,7 @@ export default function OnlineUserPage() {
                     </HeaderBlockButtonGroup>
                 )}
             </div>
-            <Table>
+            <Table error={data === undefined && error} onRetry={mutate}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
