@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 26.13.1
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm --filter frontend check:size
+      - run: pnpm --dir apps/admin lint
+      - run: pnpm test:release
+      - name: Package the checked builds
+        run: python3 scripts/package.py frontend admin
+      - name: Extract release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/release_notes.py "$RELEASE_TAG" > release/notes.md
+      - name: Publish installer assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG"
+          --notes-file release/notes.md
+          release/dist.zip release/dist.zip.sha256
+          release/nezha-zool-admin-dist.zip release/nezha-zool-admin-dist.zip.sha256
