@@ -7,7 +7,7 @@ import type { Density, View } from '@/core/settings'
 import type { HistoryPoint, NodeInfo, Snapshot } from '@/core/model'
 import { recentBuckets, type Bucket } from '@/core/live'
 import { currencyCode, formatMoney, formatPercent, ratio, splitBytes, splitSpeed } from '@/core/format'
-import { displayCurrency, onlineMonthlyCost, sharedCurrency } from '@/core/cost'
+import { missingCostHint, displayCurrency, onlineMonthlyCost, sharedCurrency } from '@/core/cost'
 import { setMoneyCurrency, setMoneyPeriod, useMoney, type MoneyPeriod } from '@/app/money'
 import { regionName, stripFlag } from '@/core/region'
 import { Popover } from '@/components/Popover'
@@ -505,7 +505,7 @@ export function HomePage() {
                     {cost.amount !== null && <span className="ml-1 text-[0.55em] text-muted">{t(yearly ? 'unit.perYear' : 'unit.perMonth')}</span>}
                   </>
                 }
-                sub={cost.amount === null ? t(loggedIn && actualCosts === null ? 'overview.actualCostUnavailable' : rateError ? 'overview.costUnavailable' : 'overview.costLoading') : <>
+                sub={cost.amount === null ? t(missingCostHint(loggedIn && actualCosts === null, rates, rateError)) : <>
                   <span className="block truncate">{t('overview.costNodes', { count: cost.paid })}</span>
                   {rates && <span className="mt-0.5 block truncate text-[10px] text-faint md:mt-1 md:text-[11px]">
                     {t(rates.stale ? 'overview.costCachedRates' : 'overview.costRates')}{' '}
