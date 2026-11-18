@@ -5,7 +5,7 @@ import { adapter, backfillLive, getCounters, getLive, getSpark, useStore, useVis
 import { Link, navigate } from '@/app/router'
 import { setShave, useShave } from '@/app/prefs'
 import type { HistoryPoint, NodeInfo, PingData, Snapshot } from '@/core/model'
-import { formatBytes, formatClock, formatNumber, formatPercent, formatSpeed, quotaUsage, ratio } from '@/core/format'
+import { formatBytes, formatClock, formatLatency, formatNumber, formatPercent, formatSpeed, quotaUsage, ratio } from '@/core/format'
 import { regionName, stripFlag } from '@/core/region'
 import { watchDay } from '@/app/day'
 import { summariseDay, spikeLimit } from '@/core/summary'
@@ -319,7 +319,7 @@ function PingChart({ data, hours, height, shave }: { data: PingData; hours: numb
         height={height}
         robust
         focus={focus !== null && visible(focus) ? String(focus) : null}
-        format={(v) => `${formatNumber(v, 0)} ms`}
+        format={formatLatency}
         formatTime={fmt.axis}
         formatTooltipTime={fmt.tooltip}
         label={t('node.tabPing')}

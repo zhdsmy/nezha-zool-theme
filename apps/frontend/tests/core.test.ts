@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { daysUntil, formatBytes, formatNumber, monthlyCost, splitSpeed, trafficUsed } from '../src/core/format'
+import { daysUntil, formatBytes, formatLatency, formatNumber, monthlyCost, splitSpeed, trafficUsed } from '../src/core/format'
 import { flagToRegion, stripFlag } from '../src/core/region'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../src/core/settings'
 import { recordCounters, spikeLimit, summariseDay } from '../src/core/summary'
@@ -14,6 +14,10 @@ describe('format', () => {
     expect(formatBytes(1536)).toBe('1.50 KB')
     expect(formatBytes(125 * 1024 ** 4)).toBe('125 TB')
     expect(splitSpeed(3.11 * 1024 ** 2)).toEqual({ value: '3.11', unit: 'MB/s' })
+  })
+
+  it('keeps sub-millisecond latency axis labels distinct', () => {
+    expect([0, 0.0025, 0.005].map(formatLatency)).toEqual(['0 ms', '0.0025 ms', '0.005 ms'])
   })
 
   it('trims only decimal zeros', () => {

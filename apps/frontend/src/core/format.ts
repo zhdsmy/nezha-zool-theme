@@ -43,6 +43,10 @@ export const formatNumber = (n: number, digits = 2) => {
   return digits > 0 ? s.replace(/\.?0+$/, '') : s
 }
 
+/** Retain meaningful sub-millisecond readings on latency axes and legends. */
+export const formatLatency = (ms: number) =>
+  `${ms > 0 && ms < 1 ? Number(ms.toPrecision(2)) : formatNumber(ms, ms < 10 ? 1 : 0)} ms`
+
 export interface Duration {
   days: number
   hours: number
