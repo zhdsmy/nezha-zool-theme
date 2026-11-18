@@ -630,17 +630,17 @@
   }
 }
 
-/* Keep touch targets at or above 40px without changing mouse layouts. */
+/* Reserve finger-sized targets for touch input. */
 @media (pointer: coarse) {
   .field {
     font-size: 16px;
   }
   header .icon-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   header .btn-outline {
-    min-height: 40px;
+    min-height: 44px;
   }
   .home-toolbar button {
     min-height: 40px;
@@ -1067,10 +1067,13 @@
   }
 }
 
-@media (pointer: coarse) and (width < 768px) {
+@media (pointer: coarse) {
   .node-tabs > button,
-  .node-ranges > .pill {
-    min-height: 40px;
+  .node-ranges > .pill,
+  .node-ping-list button,
+  .node-charts-bar > button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

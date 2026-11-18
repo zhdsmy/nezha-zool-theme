@@ -25,3 +25,8 @@ it('keeps the latency legend and reset control at least 32px high', () => {
   expect(page).toMatch(/node-ping-row[^"]*min-h-8/)
   expect(page).toMatch(/min-h-8 rounded-full[^"]+" onClick=\{\(\) => setShown\(null\)/)
 })
+
+it('reserves 44px touch targets for header and chart controls', () => {
+  expect(css).toMatch(/header \.icon-btn\s*\{\s*width: 44px;\s*height: 44px/)
+  expect(css).toMatch(/@media \(pointer: coarse\)\s*\{\s*\.node-tabs[^}]*\.node-ping-list button[^}]*min-height: 44px/)
+})
