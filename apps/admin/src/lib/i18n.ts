@@ -74,7 +74,10 @@ i18n.use(initReactI18next).init({
     },
 })
 
+document.documentElement.lang = i18n.resolvedLanguage || i18n.language
+
 i18n.on("languageChanged", (lng) => {
+    document.documentElement.lang = i18n.resolvedLanguage || lng
     localStorage.setItem("language", lng)
 })
 
