@@ -55,3 +55,9 @@ it('retains touch readings after pointerup and dismisses them on an outside pres
   expect(chart).toMatch(/onPointerUp=[\s\S]*?setPinned\(true\)/)
   expect(chart).toContain("document.addEventListener('pointerdown', dismiss)")
 })
+
+it('matches the process chart and swap legend to their actual series', () => {
+  const page = readFileSync(new URL('../src/pages/NodePage.tsx', import.meta.url), 'utf8')
+  expect(page).toMatch(/s\('process', t\('metric.process'\)[^\n]*p\.process/)
+  expect(page).toMatch(/<SeriesDot color="var\(--chart-3\)"\s*\/>\{t\('metric.swap'\)\}/)
+})

@@ -187,9 +187,9 @@ function useTimeFormats(hours: number) {
 function ChartCard({ title, value, children }: { title: string; value?: ReactNode; children: ReactNode }) {
   return (
     <div className="node-chart-card card p-5 md:px-3.5 md:py-3 lg:p-5">
-      <div className="node-chart-head mb-3 md:mb-1.5 lg:mb-3 flex items-baseline justify-between gap-3">
+      <div className="node-chart-head flex-wrap mb-3 md:mb-1.5 lg:mb-3 flex items-baseline justify-between gap-3">
         <h3 className="shrink-0 text-[13px] text-muted md:text-[12px] lg:text-[13px]">{title}</h3>
-        {value && <p className="num truncate text-[13px] md:text-[12px] lg:text-[13px]">{value}</p>}
+        {value && <p className="num min-w-0 text-[13px] md:text-[12px] lg:text-[13px]">{value}</p>}
       </div>
       {children}
     </div>
@@ -224,7 +224,10 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
       <ChartCard title={t('metric.cpu')} value={last ? reading(last.cpu, v => `${formatPercent(v)}%`) : undefined}>
         <Chart {...common} label={t('metric.cpu')} yMax={100} format={(v) => `${formatNumber(v, 0)}%`} series={[s('cpu', t('metric.cpu'), 'var(--chart-1)', (p) => p.cpu, true)]} />
       </ChartCard>
-      <ChartCard title={t('metric.memory')} value={last ? `${reading(last.memUsed, formatBytes)} / ${formatBytes(memTotal)}` : undefined}>
+      <ChartCard title={t('metric.memory')} value={last && (node.swapTotal ? <>
+        <SeriesDot color="var(--chart-2)" />{reading(last.memUsed, formatBytes)} / {formatBytes(memTotal)} ·{' '}
+        <SeriesDot color="var(--chart-3)" />{t('metric.swap')} {reading(last.swapUsed, formatBytes)}
+      </> : `${reading(last.memUsed, formatBytes)} / ${formatBytes(memTotal)}`)}>
         <Chart
           {...common}
           label={t('metric.memory')}
@@ -270,13 +273,17 @@ function LoadCharts({ node, points, hours, height, snap }: { node: NodeInfo; poi
           series={[s('tcp', t('metric.tcp'), 'var(--chart-1)', (p) => p.tcp, true), s('udp', t('metric.udp'), 'var(--chart-4)', (p) => p.udp)]}
         />
       </ChartCard>
-      <ChartCard title={`${t('metric.load')} · ${t('metric.process')}`} value={last ? `${reading(last.load1, formatNumber)} · ${reading(last.process)}` : undefined}>
+      <ChartCard title={t('metric.load')} value={last && reading(last.load1, formatNumber)}>
         <Chart
           {...common}
           label={t('metric.load')}
           format={(v) => formatNumber(v, v > 0 && v < 1 && Math.round(v * 100) % 10 !== 0 ? 2 : 1)}
           series={[s('load', t('metric.load'), 'var(--chart-2)', (p) => p.load1, true)]}
         />
+      </ChartCard>
+      <ChartCard title={t('metric.process')} value={last && reading(last.process)}>
+        <Chart {...common} label={t('metric.process')} format={(v) => formatNumber(v, 0)}
+          series={[s('process', t('metric.process'), 'var(--chart-4)', p => p.process, true)]} />
       </ChartCard>
     </div>
   )
