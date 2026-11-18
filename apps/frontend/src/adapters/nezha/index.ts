@@ -408,8 +408,14 @@ let groupsCache = new Map<number, string[]>()
 let groupsPromise: Promise<Map<number, string[]>> | null = null
 const loadGroups = () =>
   (groupsPromise ??= request<Common<NezhaGroup[]>>('/api/v1/server-group')
-    .then((r) => (groupsCache = groupIndex(r.data ?? [])))
-    .catch(() => groupsCache))
+    .then((r) => {
+      if (!r.success) throw new Error('Nezha groups unavailable')
+      return (groupsCache = groupIndex(r.data ?? []))
+    })
+    .catch((error) => {
+      groupsPromise = null
+      throw error
+    }))
 
 const FIRST_FRAME_TIMEOUT_MS = 15_000
 
@@ -511,7 +517,7 @@ export const nezha: MonitorAdapter = {
   },
 
   subscribe(listener, onStatus) {
-    loadGroups()
+    void loadGroups().catch(() => {})
     return hub.listen((frame) => listener(mapFrame(frame, groupsCache)), onStatus)
   },
 

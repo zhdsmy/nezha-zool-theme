@@ -86,3 +86,16 @@ it('reset drops the cached frame and socket, so the next load waits for a new fr
   // Groups are fetched again rather than served from the previous promise.
   expect(fetches.mock.calls.some(([u]) => String(u).includes('server-group'))).toBe(true)
 })
+
+it('retries an unsuccessful group response on the next load', async () => {
+  nezha.reset!()
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(Response.json({ success: false }))
+    .mockResolvedValueOnce(Response.json(groups))
+  vi.stubGlobal('fetch', fetch)
+  await expect(nezha.loadNodes()).rejects.toThrow('Nezha groups unavailable')
+  const retry = nezha.loadNodes()
+  await vi.advanceTimersByTimeAsync(0)
+  expect((await retry).some(n => n.groups.length)).toBe(true)
+  expect(fetch).toHaveBeenCalledTimes(2)
+})
