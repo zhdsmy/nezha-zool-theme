@@ -49,3 +49,9 @@ it('reserves the filtered empty message for a nonempty fleet', () => {
   const page = readFileSync(new URL('../src/pages/HomePage.tsx', import.meta.url), 'utf8')
   expect(page).toContain("t(nodes.length ? 'toolbar.empty' : 'status.noNodes')")
 })
+
+it('retains touch readings after pointerup and dismisses them on an outside press', () => {
+  const chart = readFileSync(new URL('../src/components/Chart.tsx', import.meta.url), 'utf8')
+  expect(chart).toMatch(/onPointerUp=[\s\S]*?setPinned\(true\)/)
+  expect(chart).toContain("document.addEventListener('pointerdown', dismiss)")
+})
