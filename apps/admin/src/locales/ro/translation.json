@@ -1,4 +1,9 @@
 {
+    "FrontendManager": {
+        "Previous": "Pagina anterioară",
+        "Next": "Pagina următoare"
+    },
+    "PageNavigation": "Paginare",
     "InterfaceLanguage": "Limba interfeței",
     "NotificationLanguage": "Limba notificărilor",
     "Retry": "Reîncearcă",

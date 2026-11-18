@@ -2,13 +2,11 @@ import { ButtonProps, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 import { ComponentProps, forwardRef, useEffect, useState } from "react"
-
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 
 const Pagination = ({ className, ...props }: ComponentProps<"nav">) => (
     <nav
         role="navigation"
-        aria-label="pagination"
         className={cn("mx-auto flex w-full justify-center", className)}
         {...props}
     />
@@ -17,7 +15,11 @@ Pagination.displayName = "Pagination"
 
 const PaginationContent = forwardRef<HTMLUListElement, ComponentProps<"ul">>(
     ({ className, ...props }, ref) => (
-        <ul ref={ref} className={cn("flex flex-row items-center gap-1", className)} {...props} />
+        <ul
+            ref={ref}
+            className={cn("flex flex-wrap items-center justify-center gap-1", className)}
+            {...props}
+        />
     ),
 )
 PaginationContent.displayName = "PaginationContent"
@@ -33,7 +35,8 @@ type PaginationLinkProps = {
     ComponentProps<"button">
 
 const PaginationLink = ({ className, isActive, size = "icon", ...props }: PaginationLinkProps) => (
-    <button type="button"
+    <button
+        type="button"
         aria-current={isActive ? "page" : undefined}
         className={cn(
             buttonVariants({
@@ -49,25 +52,23 @@ PaginationLink.displayName = "PaginationLink"
 
 const PaginationPrevious = ({ className, ...props }: ComponentProps<typeof PaginationLink>) => (
     <PaginationLink
-        aria-label="Go to previous page"
         size="default"
         className={cn("gap-1 pl-2.5", className)}
         {...props}
     >
         <ChevronLeft className="h-4 w-4" />
-        <span>Previous</span>
+        <span className="max-sm:sr-only"><Trans i18nKey="FrontendManager.Previous" /></span>
     </PaginationLink>
 )
 PaginationPrevious.displayName = "PaginationPrevious"
 
 const PaginationNext = ({ className, ...props }: ComponentProps<typeof PaginationLink>) => (
     <PaginationLink
-        aria-label="Go to next page"
         size="default"
         className={cn("gap-1 pr-2.5", className)}
         {...props}
     >
-        <span>Next</span>
+        <span className="max-sm:sr-only"><Trans i18nKey="FrontendManager.Next" /></span>
         <ChevronRight className="h-4 w-4" />
     </PaginationLink>
 )
@@ -80,7 +81,6 @@ const PaginationEllipsis = ({ className, ...props }: ComponentProps<"span">) => 
         {...props}
     >
         <MoreHorizontal className="h-4 w-4" />
-        <span className="sr-only">More pages</span>
     </span>
 )
 PaginationEllipsis.displayName = "PaginationEllipsis"
@@ -96,7 +96,12 @@ export {
 }
 
 // Keep only the count across requests. Rows and actions always belong to the current page.
-export function TablePagination({ page, pageSize, total, onPageChange }: {
+export function TablePagination({
+    page,
+    pageSize,
+    total,
+    onPageChange,
+}: {
     page: number
     pageSize: number
     total?: number
@@ -104,7 +109,9 @@ export function TablePagination({ page, pageSize, total, onPageChange }: {
 }) {
     const { t } = useTranslation()
     const [lastTotal, setLastTotal] = useState(total)
-    useEffect(() => { if (total !== undefined) setLastTotal(total) }, [total])
+    useEffect(() => {
+        if (total !== undefined) setLastTotal(total)
+    }, [total])
     const count = total ?? lastTotal
     const last = count === undefined ? page : Math.ceil(count / pageSize)
     const start = Math.max(2, Math.min(page - 1, last - 3))
@@ -117,21 +124,37 @@ export function TablePagination({ page, pageSize, total, onPageChange }: {
     if (last > 1) pages.push(last)
 
     return (
-        <div className="flex items-center justify-between px-2 py-4">
-            <span className="text-sm text-muted-foreground">{t("Total")}: {count ?? "—"}</span>
-            <Pagination>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-4">
+            <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                {t("Total")}: {count ?? "—"}
+            </span>
+            <Pagination aria-label={t("PageNavigation")} className="mx-0 ml-auto w-auto max-w-full">
                 <PaginationContent>
                     <PaginationItem>
-                        <PaginationPrevious disabled={page <= 1} onClick={() => onPageChange(page - 1)} />
+                        <PaginationPrevious
+                            disabled={page <= 1}
+                            onClick={() => onPageChange(page - 1)}
+                        />
                     </PaginationItem>
                     {pages.map((n, i) => (
                         <PaginationItem key={n || `gap-${i}`}>
-                            {n ? <PaginationLink isActive={n === page} onClick={() => onPageChange(n)}>{n}</PaginationLink>
-                                : <PaginationEllipsis />}
+                            {n ? (
+                                <PaginationLink
+                                    isActive={n === page}
+                                    onClick={() => onPageChange(n)}
+                                >
+                                    {n}
+                                </PaginationLink>
+                            ) : (
+                                <PaginationEllipsis />
+                            )}
                         </PaginationItem>
                     ))}
                     <PaginationItem>
-                        <PaginationNext disabled={page >= last} onClick={() => onPageChange(page + 1)} />
+                        <PaginationNext
+                            disabled={page >= last}
+                            onClick={() => onPageChange(page + 1)}
+                        />
                     </PaginationItem>
                 </PaginationContent>
             </Pagination>

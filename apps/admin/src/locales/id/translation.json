@@ -1,4 +1,9 @@
 {
+    "FrontendManager": {
+        "Previous": "Halaman sebelumnya",
+        "Next": "Halaman berikutnya"
+    },
+    "PageNavigation": "Navigasi halaman",
     "InterfaceLanguage": "Bahasa antarmuka",
     "NotificationLanguage": "Bahasa notifikasi",
     "Retry": "Coba lagi",

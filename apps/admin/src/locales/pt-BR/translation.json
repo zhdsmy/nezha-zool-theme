@@ -1,4 +1,9 @@
 {
+    "FrontendManager": {
+        "Previous": "Página anterior",
+        "Next": "Próxima página"
+    },
+    "PageNavigation": "Paginação",
     "InterfaceLanguage": "Idioma da interface",
     "NotificationLanguage": "Idioma das notificações",
     "Retry": "Tentar novamente",
