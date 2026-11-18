@@ -19,9 +19,10 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Navigate } from "react-router-dom"
 import { toast } from "sonner"
-import useSWR, { mutate as mutateCache } from "swr"
+import useSWR, { useSWRConfig } from "swr"
 
 export default function FrontendsPage() {
+    const { mutate: mutateCache } = useSWRConfig()
     const { t } = useTranslation()
     const { profile, loading } = useAuth()
     const isAdministrator = profile?.role === 0

@@ -29,12 +29,14 @@ export const ServerProvider: React.FC<ServerProviderProps> = ({
     const location = useLocation()
 
     useEffect(() => {
+        let active = true
         if (withServerGroup)
             (async () => {
                 try {
                     const sg = await getServerGroups()
-                    setServerGroup(sg)
+                    if (active) setServerGroup(sg)
                 } catch (error: any) {
+                    if (!active) return
                     toast("ServerProvider Error", {
                         description: error.message,
                     })
@@ -46,14 +48,16 @@ export const ServerProvider: React.FC<ServerProviderProps> = ({
                 try {
                     const s = (await getServers()) || []
                     const serverData = s.map(({ id, name }) => ({ id, name }))
-                    setServer(serverData)
+                    if (active) setServer(serverData)
                 } catch (error: any) {
+                    if (!active) return
                     toast("ServerProvider Error", {
                         description: error.message,
                     })
                     setServer(undefined)
                 }
             })()
+        return () => { active = false }
     }, [location.pathname, setServer, setServerGroup, withServer, withServerGroup])
 
     const value: ServerContextProps = useMemo(

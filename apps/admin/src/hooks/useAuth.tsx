@@ -5,8 +5,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { SWRConfig } from "swr"
 
 import { useMainStore } from "./useMainStore"
+import { useNotificationStore } from "./useNotificationStore"
+import { useServerStore } from "./useServerStore"
 
 const AuthContext = createContext<AuthContextProps>({
     profile: undefined,
@@ -27,6 +30,12 @@ function normalizeRole(role: unknown): number {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const profile = useMainStore((store) => store.profile)
     const setProfile = useMainStore((store) => store.setProfile)
+    const [session, setSession] = useState(0)
+    const clearSessionData = useCallback(() => {
+        useServerStore.setState({ server: undefined, serverGroup: undefined })
+        useNotificationStore.setState({ notifiers: undefined, notifierGroup: undefined })
+        setSession((value) => value + 1)
+    }, [])
     const [loading, setLoading] = useState(true)
     const { t } = useTranslation()
 
@@ -36,6 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const authEpoch = useRef(0)
 
     useEffect(() => {
+        clearSessionData()
         const epoch = authEpoch.current
         ;(async () => {
             try {
@@ -50,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setLoading(false)
             }
         })()
-    }, [setProfile])
+    }, [setProfile, clearSessionData])
 
     const navigate = useNavigate()
 
@@ -58,8 +68,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         async (username: string, password: string) => {
             try {
                 await loginRequest(username, password)
+                const epoch = ++authEpoch.current
+                clearSessionData()
+                setProfile(undefined)
                 const user = await getProfile()
-                authEpoch.current++
+                if (authEpoch.current !== epoch) return
                 user.role = normalizeRole(user.role)
                 setProfile(user)
                 navigate(consumeMCPOAuthReturn())
@@ -76,13 +89,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setLoading(false)
             }
         },
-        [navigate, setProfile, t],
+        [navigate, setProfile, t, clearSessionData],
     )
 
     const loginOauth2 = useCallback(async () => {
         try {
+            const epoch = ++authEpoch.current
+            clearSessionData()
+            setProfile(undefined)
             const user = await getProfile()
-            authEpoch.current++
+            if (authEpoch.current !== epoch) return
             user.role = normalizeRole(user.role)
             setProfile(user)
             // Remove the provider callback flag before navigation, otherwise
@@ -94,11 +110,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } finally {
             setLoading(false)
         }
-    }, [navigate, setProfile])
+    }, [navigate, setProfile, clearSessionData])
 
     const logout = useCallback(() => {
         clearMCPOAuthReturn()
         authEpoch.current++
+        clearSessionData()
         document.cookie.split(";").forEach(function (c) {
             document.cookie = c
                 .replace(/^ +/, "")
@@ -107,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(undefined)
         setLoading(false)
         navigate("/dashboard/login", { replace: true })
-    }, [navigate, setProfile])
+    }, [navigate, setProfile, clearSessionData])
 
     const value = useMemo(
         () => ({
@@ -119,7 +136,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }),
         [profile, loading, login, loginOauth2, logout],
     )
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    return (
+        <AuthContext.Provider value={value}>
+            <SWRConfig key={session} value={{ provider: () => new Map() }}>
+                {children}
+            </SWRConfig>
+        </AuthContext.Provider>
+    )
 }
 
 export const useAuth = () => {
