@@ -13,6 +13,8 @@ const fake = vi.hoisted(() => {
     failNextLoad: false,
     loggedIn: false,
     privateLoads: 0,
+    recordHours: 0,
+    loadRecent: vi.fn<(id: string, minutes: number, signal: AbortSignal) => Promise<{ at: number }[]>>(),
     failPrivateLoad: false,
     node,
   }
@@ -23,7 +25,8 @@ vi.mock('@adapter', () => ({
   default: {
     target: 'demo',
     capabilities: {},
-    loadSite: async () => ({ name: 'x', description: '', settings: {}, recordHours: 0, oauth: false, passwordLogin: true }),
+    loadSite: async () => ({ name: 'x', description: '', settings: {}, recordHours: fake.recordHours, oauth: false, passwordLogin: true }),
+    loadRecent: fake.loadRecent,
     loadNodes: async () => {
       fake.loads++
       if (fake.failNextLoad) {
@@ -202,4 +205,34 @@ it('keeps real counter reset endpoints after live chart samples roll over', asyn
   const history = [{ ...snap, at: midnight, totalUp: 100 }]
   expect(getLive('reset')[0].reportedAt).toBeGreaterThan(midnight + 31_000)
   expect(summariseDay(history, getCounters('reset'), midnight).todayUp).toBe(470)
+})
+
+it('refresh restarts the canceled backfill queue for the current node list', async () => {
+  const { start, refresh, getSpark } = await import('../src/app/store')
+  const original = fake.nodes
+  fake.nodes = ['seed1', 'seed2', 'seed3', 'seed4', 'seed5', 'removed'].map(fake.node)
+  fake.recordHours = 24
+  const oldRequests: (() => void)[] = []
+  fake.loadRecent.mockImplementation(() => new Promise(resolve => {
+    oldRequests.push(() => resolve([{ at: 1 }]))
+  }))
+  try {
+    await start()
+    const first = fake.loadRecent.mock.calls.slice()
+    expect(first).toHaveLength(4)
+    fake.nodes = [...fake.nodes.slice(0, -1), fake.node('added')]
+    fake.loadRecent.mockResolvedValue([{ at: 2 }])
+    await refresh()
+    expect(first.every(([, , signal]) => signal.aborted)).toBe(true)
+    oldRequests.forEach(finish => finish())
+    await vi.waitFor(() => {
+      for (const { id } of fake.nodes) expect(getSpark(id)).toEqual([{ at: 2 }])
+    })
+    expect(fake.loadRecent.mock.calls.slice(4).map(([id]) => id).sort()).toEqual(fake.nodes.map(n => n.id).sort())
+  } finally {
+    fake.nodes = original
+    fake.recordHours = 0
+    fake.loadRecent.mockReset()
+    emit()
+  }
 })

@@ -186,6 +186,7 @@ function connect() {
     },
     (connection) => set({ connection }),
   )
+  void seedLive()
 }
 
 /**
@@ -234,7 +235,6 @@ export async function start() {
     return
   }
   connect()
-  void seedLive()
 }
 
 /**
