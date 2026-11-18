@@ -1,4 +1,20 @@
 {
+    "AgentConfig": {
+        "ip_report_period": "IP Report Interval (s)",
+        "report_delay": "Report Interval (s)",
+        "hard_drive_partition_allowlist": "Disk Partition Allowlist (JSON)",
+        "nic_allowlist": "NIC Allowlist (JSON)",
+        "disable_auto_update": "Disable Auto Update",
+        "disable_command_execute": "Disable Command Execution",
+        "disable_force_update": "Disable Force Update",
+        "disable_nat": "Disable NAT Traversal",
+        "disable_send_query": "Disable Active Probing",
+        "gpu": "Enable GPU Monitoring",
+        "temperature": "Enable Temperature Monitoring",
+        "skip_connection_count": "Skip Connection Count",
+        "skip_procs_count": "Skip Process Count",
+        "debug": "Debug Mode"
+    },
     "FrontendManager": {
         "Previous": "Предыдущая страница",
         "Next": "Следующая страница"

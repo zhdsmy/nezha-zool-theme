@@ -1,4 +1,20 @@
 {
+    "AgentConfig": {
+        "ip_report_period": "IP 報告間隔（秒）",
+        "report_delay": "状態報告間隔（秒）",
+        "hard_drive_partition_allowlist": "ディスクパーティション許可リスト（JSON）",
+        "nic_allowlist": "NIC 許可リスト（JSON）",
+        "disable_auto_update": "自動更新を無効化",
+        "disable_command_execute": "コマンド実行を無効化",
+        "disable_force_update": "強制更新を無効化",
+        "disable_nat": "NAT 越えを無効化",
+        "disable_send_query": "監視プローブ送信を無効化",
+        "gpu": "GPU 監視を有効化",
+        "temperature": "温度監視を有効化",
+        "skip_connection_count": "接続数の集計をスキップ",
+        "skip_procs_count": "プロセス数の集計をスキップ",
+        "debug": "デバッグモード"
+    },
     "PageNavigation": "ページ送り",
     "InterfaceLanguage": "表示言語",
     "NotificationLanguage": "通知言語",

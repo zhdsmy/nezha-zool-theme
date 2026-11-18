@@ -1,4 +1,20 @@
 {
+    "AgentConfig": {
+        "ip_report_period": "IP 上報週期（秒）",
+        "report_delay": "狀態上報間隔（秒）",
+        "hard_drive_partition_allowlist": "磁碟分割區白名單（JSON）",
+        "nic_allowlist": "網卡白名單（JSON）",
+        "disable_auto_update": "停用自動更新",
+        "disable_command_execute": "禁止執行命令",
+        "disable_force_update": "停用強制更新",
+        "disable_nat": "停用內網穿透",
+        "disable_send_query": "停用主動探測上報",
+        "gpu": "啟用 GPU 監控",
+        "temperature": "啟用溫度監控",
+        "skip_connection_count": "略過連線數統計",
+        "skip_procs_count": "略過行程數統計",
+        "debug": "除錯模式"
+    },
     "PageNavigation": "分頁",
     "InterfaceLanguage": "介面語言",
     "NotificationLanguage": "通知語言",
