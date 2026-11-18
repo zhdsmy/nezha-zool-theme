@@ -10,6 +10,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "package": "pnpm build && pnpm --filter frontend check:size && python3 scripts/package.py frontend admin",
+    "test:release": "pnpm --dir apps/frontend exec vitest run --globals --root ../../scripts/tests"
   }
 }

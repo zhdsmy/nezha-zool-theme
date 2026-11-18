@@ -12,7 +12,7 @@
     "test:unit": "vitest run",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:size": "node scripts/check-size.mjs",
-    "package": "pnpm build && pnpm check:size && node scripts/package.mjs",
+    "package": "pnpm build && pnpm check:size && python3 ../../scripts/package.py frontend",
     "icons:os": "node scripts/import-os-icons.mjs",
     "icons:flags": "node scripts/import-flag-icons.mjs"
   },
