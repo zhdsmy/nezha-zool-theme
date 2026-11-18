@@ -106,7 +106,7 @@ export default function DDNSPage() {
             accessorFn: (row) => row.domains,
             cell: ({ row }) => {
                 const s = row.original
-                return <div className="max-w-24 whitespace-normal break-words">{s.domains}</div>
+                return <div className="max-w-24 whitespace-normal break-words">{s.domains?.join(", ")}</div>
             },
         },
         {
