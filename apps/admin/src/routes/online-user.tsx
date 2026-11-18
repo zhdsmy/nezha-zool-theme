@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { blockUser } from "@/api/online-user"
 import { BlockButtonGroup } from "@/components/action-button-group"
@@ -92,11 +93,7 @@ export default function OnlineUserPage() {
             header: t("ConnectedAt"),
             accessorKey: "connected_at",
             accessorFn: (row) => row.connected_at,
-            cell: ({ row }) => {
-                const s = row.original
-                const date = new Date(s.connected_at)
-                return <span>{date.toISOString()}</span>
-            },
+            cell: ({ row }) => parseTimestamp(row.original.connected_at)?.toISOString() ?? "—",
         },
         {
             id: "actions",

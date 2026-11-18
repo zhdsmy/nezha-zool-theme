@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import {
     listMCPOAuthClients,
     listMCPOAuthGrants,
@@ -22,7 +23,7 @@ import { useTranslation } from "react-i18next"
 import useSWR, { useSWRConfig } from "swr"
 
 function displayTime(value?: string) {
-    return value ? new Date(value).toLocaleString() : "—"
+    return parseTimestamp(value)?.toLocaleString() ?? "—"
 }
 
 function errorMessage(error: unknown) {

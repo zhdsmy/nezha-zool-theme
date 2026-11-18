@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@/lib/timestamp"
 import { swrFetcher } from "@/api/api"
 import { cancelServerTransfer, retryServerTransfer } from "@/api/transfer"
 import { Badge } from "@/components/ui/badge"
@@ -223,7 +224,7 @@ export default function TransferPage() {
                                         {row.last_error || "-"}
                                     </TableCell>
                                     <TableCell>
-                                        {new Date(row.created_at).toLocaleString()}
+                                        {parseTimestamp(row.created_at)?.toLocaleString() ?? "—"}
                                     </TableCell>
                                     <TableCell className="space-x-2">
                                         {isPending &&
