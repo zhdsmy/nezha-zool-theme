@@ -9,13 +9,17 @@ export class HttpError extends Error {
 
 export async function request<T>(url: string, init: RequestInit = {}, timeoutMs = 15_000): Promise<T> {
   const ctrl = new AbortController()
+  const signal = init.signal
+  const abort = () => ctrl.abort(signal?.reason)
+  if (signal?.aborted) abort()
+  else signal?.addEventListener('abort', abort, { once: true })
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
     const res = await fetch(url, {
       credentials: 'same-origin',
       ...init,
       headers: { accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}), ...init.headers },
-      signal: init.signal ? AbortSignal.any([init.signal, ctrl.signal]) : ctrl.signal,
+      signal: ctrl.signal,
     })
     const text = await res.text()
     let body: unknown = text
@@ -28,6 +32,7 @@ export async function request<T>(url: string, init: RequestInit = {}, timeoutMs 
     return body as T
   } finally {
     clearTimeout(timer)
+    signal?.removeEventListener('abort', abort)
   }
 }
 

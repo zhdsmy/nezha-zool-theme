@@ -432,9 +432,9 @@ function loadGroups() {
     const groups = groupIndex(r.data ?? [])
     if (groupsPromise === pending) groupsCache = groups
     return groups
-  }).catch(error => {
+  }).catch(() => {
     if (groupsPromise === pending) groupsPromise = null
-    throw error
+    return new Map<number, string[]>()
   })
   return (groupsPromise = pending)
 }
@@ -545,7 +545,7 @@ export const nezha: NezhaAdapter = {
   },
 
   subscribe(listener, onStatus) {
-    void loadGroups().catch(() => {})
+    void loadGroups()
     return hub.listen((frame) => listener(mapFrame(frame, groupsCache)), onStatus)
   },
 
@@ -559,7 +559,7 @@ export const nezha: NezhaAdapter = {
     const base = `/api/v1/server/${encodeURIComponent(id)}/metrics?period=${period(hours)}&metric=`
     const names = Object.keys(METRICS) as (keyof typeof METRICS)[]
     const results = await Promise.all(names.map((m) => request<Common<NezhaMetricSeries>>(base + m, { signal }, 60_000).catch(() => null)))
-    signal?.throwIfAborted()
+    if (signal?.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError')
     if (!results[0]?.success) throw new Error('Nezha history unavailable')
     return mergeMetrics(Object.fromEntries(names.map((m, i) => [m, results[i]?.data])), Date.now() - hours * 3_600_000)
   },

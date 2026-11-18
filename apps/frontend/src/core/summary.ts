@@ -27,9 +27,8 @@ export interface DaySummary {
 }
 
 /**
- * Today's traffic is the growth of the cumulative counters since local midnight, so it
- * does not depend on how the backend buckets its records. Peaks are the highest recorded
- * averages in the given points (the node page passes the last 24 hours).
+ * History arrives in chronological order. Count its recorded increments, then continue
+ * with newer live reports. Peaks use the full 24-hour history supplied by the node page.
  */
 export function summariseDay(
   points: HistoryPoint[],
@@ -47,16 +46,17 @@ export function summariseDay(
       s.peakDownAt = p.at
     }
   }
+  const reports = [...new Map(live.map(p => [p.at, p])).values()].sort((a, b) => a.at - b.at)
   for (const [key, total] of [['totalUp', 'todayUp'], ['totalDown', 'todayDown']] as const) {
-    if (!points.some(p => p.at >= midnight && Number.isFinite(p[key]))) continue
+    const history = points.filter(p => p.at >= midnight && Number.isFinite(p[key]))
+    if (!history.length) continue
+    // Nezha 1d timestamps mark the start of each last-value 30-second bucket.
+    const liveFrom = history[history.length - 1].at + 30_000
+    let previous = history[0][key]!
     let sum = 0
-    let previous: number | undefined
-    const readings = new Map<number, number>()
-    for (const p of [...live, ...points]) {
-      if (p.at >= midnight && p[key] !== undefined) readings.set(p.at, p[key]!)
-    }
-    for (const [, value] of [...readings].sort(([a], [b]) => a - b)) {
-      if (previous !== undefined) sum += value >= previous ? value - previous : value
+    for (const p of [...history, ...reports.filter(p => p.at >= liveFrom)]) {
+      const value = p[key]!
+      sum += value >= previous ? value - previous : value
       previous = value
     }
     s[total] = sum
