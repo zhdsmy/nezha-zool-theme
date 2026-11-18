@@ -164,3 +164,7 @@ it('keeps grouped legacy amounts and free text prices', () => {
   expect(parse('1,234,567.50 元')).toMatchObject({ price: 1234567.5, currency: '元' })
   expect(parse('免費方案').price).toBe(-1)
 })
+
+it.each([['毎日', 1], ['毎週', 7]])('reads Japanese billing cycle %s', (cycle, days) => {
+  expect(parsePublicNote(JSON.stringify({ billingDataMod: { cycle } })).billingCycle).toBe(days)
+})

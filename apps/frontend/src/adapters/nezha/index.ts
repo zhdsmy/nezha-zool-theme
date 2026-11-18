@@ -131,8 +131,8 @@ export function parseActualCost(note: unknown): ActualCost | undefined {
 }
 
 const CYCLES: [RegExp, number][] = [
-  [/^(d|days?|daily|天|日|日間|每天|每日)$/i, 1],
-  [/^(w|wk|weeks?|weekly|周|週|週間|每周|每週)$/i, 7],
+  [/^(d|days?|daily|天|日|日間|每天|每日|毎日)$/i, 1],
+  [/^(w|wk|weeks?|weekly|周|週|週間|每周|每週|毎週)$/i, 7],
   [/^(m|mo|months?|monthly|月|个月|個月|か月|ヶ月|箇月|每月|毎月)$/i, 30],
   [/^(q|qr|quarter|quarterly|季|季度)$/i, 90],
   [/^(h|half|half-?year|semi|semi-?annual(?:ly)?|半|半年)$/i, 182],
