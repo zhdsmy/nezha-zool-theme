@@ -175,3 +175,11 @@ it('keeps the reconnect label throughout a retry after a valid frame', async () 
   expect(connectionLabel({ connection: 'connecting', fed: true })).toBe('status.reconnecting')
   expect(connectionLabel({ connection: 'connecting', fed: false })).toBe('status.connecting')
 })
+
+it('waits for site configuration before requesting exchange rates for active displays', async () => {
+  const { getState, needsExchangeRates } = await import('../src/app/store')
+  const { settings } = getState()
+  expect(needsExchangeRates({ phase: 'loading', settings })).toBe(false)
+  expect(needsExchangeRates({ phase: 'ready', settings: { ...settings, showCost: false, showBilling: false } })).toBe(false)
+  expect(needsExchangeRates({ phase: 'ready', settings: { ...settings, showCost: false, showBilling: true } })).toBe(true)
+})

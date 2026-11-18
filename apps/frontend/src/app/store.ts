@@ -60,6 +60,9 @@ export const getState = () => state
 export const connectionLabel = ({ connection, fed }: Pick<State, 'connection' | 'fed'>) =>
   !fed ? 'status.connecting' : connection === 'open' ? 'status.live' : 'status.reconnecting'
 
+export const needsExchangeRates = ({ phase, settings }: Pick<State, 'phase' | 'settings'>) =>
+  phase === 'ready' && (settings.showCost || settings.showBilling)
+
 export function setExchangeRates(exchangeRates: ExchangeRates | null, exchangeRateError = false) {
   set({ exchangeRates, exchangeRateError })
 }

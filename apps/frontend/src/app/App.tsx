@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { adapter, setExchangeRates, start, useStore } from './store'
+import { adapter, needsExchangeRates, setExchangeRates, start, useStore } from './store'
 import { loadExchangeRates } from '@/core/cost'
 import { usePathname } from './router'
 import { setDefaultAppearance, useView } from './prefs'
@@ -69,6 +69,7 @@ export function App() {
   const phase = useStore((s) => s.phase)
   const site = useStore((s) => s.site)
   const settings = useStore((s) => s.settings)
+  const pollRates = useStore(needsExchangeRates)
   const pathname = usePathname()
   const nodeId = adapter.matchNodePath(pathname)
 
@@ -77,7 +78,7 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    if (!settings.showCost && !settings.showBilling) return
+    if (!pollRates) return
     let active = true
     const refresh = () => loadExchangeRates().then((value) => {
       if (active) setExchangeRates(value)
@@ -87,7 +88,7 @@ export function App() {
     refresh()
     const timer = setInterval(refresh, 86_400_000)
     return () => { active = false; clearInterval(timer) }
-  }, [settings.showCost, settings.showBilling])
+  }, [pollRates])
 
   useEffect(() => {
     setDefaultAppearance(settings.defaultAppearance)
