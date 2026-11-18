@@ -13,9 +13,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { selectableTableFeatures } from "@/lib/table"
+import { selectableTableFeatures, useSelectableTable } from "@/lib/table"
 import { ModelDDNSProfile } from "@/types"
-import { ColumnDef, flexRender, useTable } from "@tanstack/react-table"
+import { ColumnDef, flexRender } from "@tanstack/react-table"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -106,7 +106,7 @@ export default function DDNSPage() {
             accessorFn: (row) => row.domains,
             cell: ({ row }) => {
                 const s = row.original
-                return <div className="max-w-24 whitespace-normal break-words">{s.domains}</div>
+                return <div className="max-w-24 whitespace-normal break-words">{s.domains?.join(", ")}</div>
             },
         },
         {
@@ -139,11 +139,7 @@ export default function DDNSPage() {
         return data ?? []
     }, [data])
 
-    const table = useTable({
-        features: selectableTableFeatures,
-        data: dataCache,
-        columns,
-    })
+    const table = useSelectableTable(dataCache, columns)
 
     const selectedRows = table.getSelectedRowModel().rows
 

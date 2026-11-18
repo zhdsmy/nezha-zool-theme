@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { batchMoveServer } from "@/api/server"
 import { Button, ButtonProps } from "@/components/ui/button"
 import {
@@ -32,7 +33,8 @@ export const BatchMoveServerIcon: React.FC<BatchMoveServerIconProps> = ({
     const [open, setOpen] = useState(false)
     const [toUserId, setToUserId] = useState<number | undefined>(undefined)
 
-    const onSubmit = async () => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async () => {
         let results
         try {
             results = await batchMoveServer({
@@ -42,7 +44,7 @@ export const BatchMoveServerIcon: React.FC<BatchMoveServerIconProps> = ({
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
@@ -71,7 +73,7 @@ export const BatchMoveServerIcon: React.FC<BatchMoveServerIconProps> = ({
             description: parts.join(" · ") || t("Done"),
         })
         setOpen(false)
-    }
+    })
 
     return serverIds.length < 1 ? (
         <IconButton
@@ -114,7 +116,7 @@ export const BatchMoveServerIcon: React.FC<BatchMoveServerIconProps> = ({
                                     </Button>
                                 </DialogClose>
                                 <Button
-                                    disabled={!toUserId || toUserId == 0}
+                                    disabled={submitting || !toUserId || toUserId == 0}
                                     type="submit"
                                     className="my-2"
                                     onClick={onSubmit}

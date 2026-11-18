@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { setServerConfig } from "@/api/server"
 import { Button, ButtonProps } from "@/components/ui/button"
 import {
@@ -33,14 +34,15 @@ export const ServerConfigCardBatch: React.FC<ServerConfigCardBatchProps> = ({ si
     const [currentKey, setCurrentKey] = useState<string>("")
     const [currentVal, setCurrentVal] = useState<string>("")
 
-    const onSubmit = async () => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async () => {
         let resp: ModelServerTaskResponse = {}
         try {
             resp = await setServerConfig({ config: JSON.stringify(data), servers: sid })
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
@@ -52,7 +54,7 @@ export const ServerConfigCardBatch: React.FC<ServerConfigCardBatchProps> = ({ si
                 (resp.offline?.length ? t(`Offline`) + ` [${resp.offline.join(",")}]` : ""),
         })
         setOpen(false)
-    }
+    })
 
     return sid.length < 1 ? (
         <IconButton
@@ -101,7 +103,7 @@ export const ServerConfigCardBatch: React.FC<ServerConfigCardBatchProps> = ({ si
                                         {t("Close")}
                                     </Button>
                                 </DialogClose>
-                                <Button type="submit" className="my-2" onClick={onSubmit}>
+                                <Button disabled={submitting} type="submit" className="my-2" onClick={onSubmit}>
                                     {t("Submit")}
                                 </Button>
                             </DialogFooter>

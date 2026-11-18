@@ -1,3 +1,5 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createNotification, updateNotification } from "@/api/notification"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,8 +36,6 @@ import { asOptionalField } from "@/lib/utils"
 import { ModelNotification } from "@/types"
 import { nrequestMethods, nrequestTypes } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -68,7 +68,7 @@ export const NotifierCard: React.FC<NotifierCardProps> = ({ data, mutate }) => {
         Partial<Pick<NotificationFormData, "skip_check">>
     const notificationDefaults: NotificationDefaults | undefined = data
 
-    const form = useForm<NotificationFormInput, unknown, NotificationFormData>({
+    const { form, open, onOpenChange } = useFormDialog<NotificationFormInput, NotificationFormData>(!!data, {
         resolver: zodResolver(notificationFormSchema),
         defaultValues: data
             ? {
@@ -93,14 +93,10 @@ export const NotifierCard: React.FC<NotifierCardProps> = ({ data, mutate }) => {
                   skip_check: false,
                   format_metric_units: false,
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
 
-    const [open, setOpen] = useState(false)
-
-    const onSubmit = async (values: NotificationFormData) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: NotificationFormData) => {
         try {
             if (data?.id) {
                 await updateNotification(data.id, values)
@@ -110,17 +106,17 @@ export const NotifierCard: React.FC<NotifierCardProps> = ({ data, mutate }) => {
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
-    }
+    })
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>
@@ -317,7 +313,7 @@ export const NotifierCard: React.FC<NotifierCardProps> = ({ data, mutate }) => {
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

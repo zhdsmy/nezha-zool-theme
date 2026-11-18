@@ -1,3 +1,5 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createServerGroup, updateServerGroup } from "@/api/server-group"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +19,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -25,8 +28,6 @@ import { MultiSelect } from "@/components/xui/multi-select"
 import { useServer } from "@/hooks/useServer"
 import { ModelServerGroupResponseItem } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -44,25 +45,21 @@ const serverGroupFormSchema = z.object({
 
 export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
-    const form = useForm<z.infer<typeof serverGroupFormSchema>>({
+    const { form, open, onOpenChange } = useFormDialog<z.infer<typeof serverGroupFormSchema>>(!!data, {
         resolver: zodResolver(serverGroupFormSchema),
         defaultValues: data
             ? {
                   name: data.group.name,
-                  servers: data.servers,
+                  servers: data.servers ?? [],
               }
             : {
                   name: "",
                   servers: [],
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
 
-    const [open, setOpen] = useState(false)
-
-    const onSubmit = async (values: z.infer<typeof serverGroupFormSchema>) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: z.infer<typeof serverGroupFormSchema>) => {
         try {
             if (data?.group.id) {
                 await updateServerGroup(data.group.id, values)
@@ -72,14 +69,14 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const { servers } = useServer()
     const serverList = servers?.map((s) => ({
@@ -88,7 +85,7 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
     })) || [{ value: "", label: "" }]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>
@@ -136,13 +133,14 @@ export const ServerGroupCard: React.FC<ServerGroupCardProps> = ({ data, mutate }
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

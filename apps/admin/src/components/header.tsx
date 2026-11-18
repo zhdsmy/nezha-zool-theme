@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router-dom"
 
 import { PageMenu, currentPage, pages, useDesktopNav, usePath } from "./page-nav"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Avatar, AvatarFallback } from "./ui/avatar"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,10 +48,7 @@ export default function Header() {
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
                 <Avatar className="ml-1 h-8 w-8 cursor-pointer border">
-                    <AvatarImage
-                        src={"https://api.dicebear.com/7.x/notionists/svg?seed=" + profile.username}
-                        alt={profile.username}
-                    />
+
                     <AvatarFallback>{profile.username}</AvatarFallback>
                 </Avatar>
             </DropdownMenuTrigger>

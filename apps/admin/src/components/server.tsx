@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { updateServer } from "@/api/server"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -19,6 +20,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -107,6 +109,7 @@ const serverFormSchema = z.object({
 
 export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
+    data = { ...data, ddns_profiles: data.ddns_profiles ?? [], override_ddns_domains: data.override_ddns_domains ?? {} }
     const form = useForm({
         resolver: zodResolver(serverFormSchema) as any,
         defaultValues: {
@@ -164,7 +167,8 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
         setPublicNoteObj((prev) => toggleEndNoExpiry(prev))
     }
 
-    const onSubmit = async (values: any) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: any) => {
         try {
             values.ddns_profiles = values.ddns_profiles_raw
                 ? conv.strToArr(values.ddns_profiles_raw).map(Number)
@@ -207,14 +211,14 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const handleOpenChange = (v: boolean) => {
         if (v) {
@@ -989,13 +993,14 @@ export const ServerCard: React.FC<ServerCardProps> = ({ data, mutate }) => {
                                         </>
                                     )}
                                 </div>
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Submit")}
                                     </Button>
                                 </DialogFooter>

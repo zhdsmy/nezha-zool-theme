@@ -1,3 +1,5 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createService, updateService } from "@/api/service"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,6 +20,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormErrors,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,8 +40,6 @@ import { asOptionalField } from "@/lib/utils"
 import { ModelService } from "@/types"
 import { serviceCoverageTypes, serviceTypes } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -76,11 +77,14 @@ const serviceFormSchema = z.object({
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
     const { t } = useTranslation()
-    const form = useForm({
+    const { form, open, onOpenChange } = useFormDialog(!!data, {
         resolver: zodResolver(serviceFormSchema) as any,
         defaultValues: data
             ? {
                   ...data,
+                  skip_servers: data.skip_servers ?? {},
+                  fail_trigger_tasks: data.fail_trigger_tasks ?? [],
+                  recover_trigger_tasks: data.recover_trigger_tasks ?? [],
                   fail_trigger_tasks_raw: conv.arrToStr(data.fail_trigger_tasks),
                   recover_trigger_tasks_raw: conv.arrToStr(data.recover_trigger_tasks),
                   skip_servers_raw: conv.recordToStrArr(data.skip_servers ? data.skip_servers : {}),
@@ -102,14 +106,10 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                   skip_servers: {},
                   skip_servers_raw: [],
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
 
-    const [open, setOpen] = useState(false)
-
-    const onSubmit = async (values: any) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: any) => {
         values.skip_servers = conv.arrToRecord(values.skip_servers_raw)
         values.fail_trigger_tasks = conv.strToArr(values.fail_trigger_tasks_raw).map(Number)
         values.recover_trigger_tasks = conv.strToArr(values.recover_trigger_tasks_raw).map(Number)
@@ -124,14 +124,14 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
-    }
+    })
 
     const { servers } = useServer()
     const serverList = servers?.map((s) => ({
@@ -146,7 +146,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
     })) || [{ value: "", label: "" }]
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>
@@ -456,13 +456,14 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ data, mutate }) => {
                                         </FormItem>
                                     )}
                                 />
+                                <FormErrors />
                                 <DialogFooter className="justify-end">
                                     <DialogClose asChild>
                                         <Button type="button" className="my-2" variant="secondary">
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Submit")}
                                     </Button>
                                 </DialogFooter>

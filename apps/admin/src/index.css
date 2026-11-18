@@ -288,6 +288,12 @@ body,
     background: var(--accent);
 }
 
+@media (min-width: 1280px) {
+    .zool-table td[data-col="name"] > .whitespace-normal {
+        max-width: 24rem;
+    }
+}
+
 /* Narrow screens: rows become cards with the key column and actions; tap a card to show the other columns. */
 @media (width < 640px) {
     .zool-table {

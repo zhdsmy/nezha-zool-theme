@@ -29,12 +29,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     const location = useLocation()
 
     useEffect(() => {
+        let active = true
         if (withNotifierGroup)
             (async () => {
                 try {
                     const ng = await getNotificationGroups()
-                    setNotifierGroup(ng)
+                    if (active) setNotifierGroup(ng)
                 } catch (error: any) {
+                    if (!active) return
                     toast("NotificationProvider Error", {
                         description: error.message,
                     })
@@ -46,14 +48,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
                 try {
                     const n = (await getNotification()) || []
                     const nData = n.map(({ id, name }) => ({ id, name }))
-                    setNotifier(nData)
+                    if (active) setNotifier(nData)
                 } catch (error: any) {
+                    if (!active) return
                     toast("NotificationProvider Error", {
                         description: error.message,
                     })
                     setNotifier(undefined)
                 }
             })()
+        return () => { active = false }
     }, [location.pathname, setNotifier, setNotifierGroup, withNotifier, withNotifierGroup])
 
     const value: NotificationContextProps = useMemo(

@@ -1,4 +1,6 @@
-import { act, render, waitFor } from "@testing-library/react"
+import { fm } from "@/lib/utils"
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { toast } from "sonner"
 import { afterEach, beforeEach, expect, test, vi } from "vitest"
 
 import { FMComponent } from "../components/fm"
@@ -39,7 +41,8 @@ vi.mock("../components/ui/dropdown-menu", () => ({
     DropdownMenuItem: (props: DivProps) => <div {...props} />,
 }))
 vi.mock("../components/ui/alert-dialog", () => ({
-    AlertDialog: (props: DivProps) => <div {...props} />,
+    AlertDialog: ({ open, children }: DivProps & { open?: boolean }) =>
+        open === false ? null : <div>{children}</div>,
     AlertDialogTrigger: (props: DivProps) => <div {...props} />,
     AlertDialogContent: (props: DivProps) => <div {...props} />,
     AlertDialogHeader: (props: DivProps) => <div {...props} />,
@@ -74,11 +77,14 @@ vi.mock("../components/xui/icon-button", () => ({
         void icon
         void size
         void variant
-        return <button {...buttonProps} />
+        return <button aria-label={icon} {...buttonProps} />
     },
 }))
 vi.mock("../components/xui/virtulized-data-table", () => ({
-    DataTable: () => <div data-testid="data-table" />,
+    DataTable: ({ columns }: { columns: { id: string; cell?: any }[] }) => {
+        const Download = columns.find((column) => column.id === "download")!.cell
+        return <Download row={{ original: { type: 0, name: "test.txt" } }} />
+    },
 }))
 vi.mock("lucide-react", () => ({
     File: () => <div data-testid="file-icon" />,
@@ -92,10 +98,28 @@ vi.mock("react-i18next", () => ({
     initReactI18next: { type: "3rdParty", init: () => {} },
 }))
 
-vi.mock("sonner", () => ({ toast: vi.fn() }))
+vi.mock("sonner", () => {
+    const fn = vi.fn()
+    return {
+        toast: Object.assign(fn, {
+            error: vi.fn(),
+            success: vi.fn(),
+            warning: vi.fn(),
+            info: vi.fn(),
+        }),
+    }
+})
+const fmWorker = vi.hoisted(() => ({
+    onmessage: null as Worker["onmessage"], postMessage: vi.fn(),
+}))
+vi.mock("@/lib/fm?worker", () => ({ default: class { constructor() { return fmWorker } } }))
 vi.mock("@/lib/utils", () => ({
     copyToClipboard: vi.fn(),
+    errorMessage: (err: unknown, fallback: string) =>
+        err instanceof Error && err.message.trim() ? err.message : fallback,
     fm: {
+        buildUploadHeader: vi.fn(() => new ArrayBuffer(1)),
+        readFileAsArrayBuffer: vi.fn(async () => new ArrayBuffer(1)),
         parseFMList: async (buf: ArrayBufferLike) => {
             const view = new DataView(buf)
             const pathLength = view.getUint32(4, false)
@@ -104,7 +128,6 @@ vi.mock("@/lib/utils", () => ({
             return { path: new TextDecoder().decode(pathBytes), fmList: [] }
         },
     },
-    fmWorker: new Worker(""),
     formatPath: (path: string) => path,
 }))
 
@@ -185,7 +208,70 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+    cleanup()
     vi.clearAllMocks()
+})
+
+test.each(["close", "error", "worker"])(
+    "R2-ADM-04: %s releases downloads and ignores late worker results",
+    async (failure) => {
+        render(<FMComponent wsUrl="/ws/file/test" />)
+        const socket = webSockets[0]
+        act(() => socket.open())
+        fireEvent.click(screen.getByRole("button", { name: "download" }))
+        expect(screen.queryByText("Downloading...")).not.toBeNull()
+        act(() => {
+            if (failure === "close") socket.onclose?.call(socket, new CloseEvent("close"))
+            else if (failure === "error") socket.onerror?.call(socket, new Event("error"))
+            else
+                fmWorker.onmessage?.call(
+                    fmWorker as unknown as Worker,
+                    new MessageEvent("message", { data: { type: 0, error: "disk failure" } }),
+                )
+        })
+        expect(screen.queryByText("Downloading...")).toBeNull()
+        expect(toast).toHaveBeenCalledTimes(1)
+        expect(
+            (screen.getByRole("button", { name: "download" }) as HTMLButtonElement).disabled,
+        ).toBe(true)
+        await act(async () => {
+            await fmWorker.onmessage?.call(
+                fmWorker as unknown as Worker,
+                new MessageEvent("message", { data: { type: 1 } }),
+            )
+        })
+    },
+)
+
+test("R2-ADM-04: disconnect aborts a pending upload and permits reopening", async () => {
+    let finishRead!: (value: ArrayBuffer) => void
+    vi.mocked(fm.readFileAsArrayBuffer).mockImplementationOnce(
+        () =>
+            new Promise((resolve) => {
+                finishRead = resolve
+            }),
+    )
+    const view = render(<FMComponent wsUrl="/ws/file/test" />)
+    const socket = webSockets[0]
+    act(() => socket.open())
+    fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+        target: { files: [new File(["data"], "test.txt")] },
+    })
+    expect(screen.queryByText("Uploading...")).not.toBeNull()
+    const sentBeforeClose = socket.sent.length
+    await act(async () => {
+        socket.close()
+        socket.onclose?.call(socket, new CloseEvent("close"))
+        finishRead(new ArrayBuffer(4))
+    })
+    expect(screen.queryByText("Uploading...")).toBeNull()
+    expect(socket.sent).toHaveLength(sentBeforeClose)
+    view.unmount()
+    render(<FMComponent wsUrl="/ws/file/reopened" />)
+    act(() => webSockets[1].open())
+    expect((screen.getByRole("button", { name: "upload" }) as HTMLButtonElement).disabled).toBe(
+        false,
+    )
 })
 
 const encodeFileNameMessage = (path: string) => {

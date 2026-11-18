@@ -1,3 +1,4 @@
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createUser } from "@/api/user"
 import { Button } from "@/components/ui/button"
 import {
@@ -63,20 +64,21 @@ export const UserCard: React.FC<UserCardProps> = ({ mutate }) => {
 
     const [open, setOpen] = useState(false)
 
-    const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: z.infer<typeof userFormSchema>) => {
         try {
             await createUser(values)
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
         setOpen(false)
         await mutate()
         form.reset()
-    }
+    })
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -112,7 +114,7 @@ export const UserCard: React.FC<UserCardProps> = ({ mutate }) => {
                                         <FormItem>
                                             <FormLabel>{t("Password")}</FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input type="password" autoComplete="new-password" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -152,7 +154,7 @@ export const UserCard: React.FC<UserCardProps> = ({ mutate }) => {
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>

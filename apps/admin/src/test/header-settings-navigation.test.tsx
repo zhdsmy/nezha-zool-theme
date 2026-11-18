@@ -53,3 +53,15 @@ test.each([true, false])(
         expect(screen.queryByRole("menuitem", { name: "Settings" })).toBeNull()
     },
 )
+
+test("account avatars never send the username to an image service", () => {
+    auth.profile = { id: 10, username: "private-account", role: 0 }
+    const images = vi.spyOn(window, "Image")
+    try {
+        render(<MemoryRouter><Header /></MemoryRouter>)
+        expect(screen.getByText("private-account")).toBeTruthy()
+        expect(images).not.toHaveBeenCalled()
+    } finally {
+        images.mockRestore()
+    }
+})

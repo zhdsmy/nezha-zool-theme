@@ -29,7 +29,10 @@ vi.mock("@/api/frontends", () => ({
     activateFrontend: mocks.activate,
     removeFrontend: mocks.remove,
 }))
-vi.mock("swr", () => ({ default: mocks.swr, mutate: mocks.refreshSettings }))
+vi.mock("swr", () => ({
+    default: mocks.swr,
+    useSWRConfig: () => ({ mutate: mocks.refreshSettings }),
+}))
 
 beforeEach(() => {
     vi.resetAllMocks()

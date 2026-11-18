@@ -1,3 +1,5 @@
+import { useFormDialog } from "@/hooks/useFormDialog"
+import { useSubmitLock } from "@/hooks/useSubmitLock"
 import { createDDNSProfile, updateDDNSProfile } from "@/api/ddns"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -35,8 +37,6 @@ import { asOptionalField } from "@/lib/utils"
 import { ModelDDNSProfile } from "@/types"
 import { ddnsRequestTypes, ddnsTypes } from "@/types"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { KeyedMutator } from "swr"
@@ -50,7 +50,7 @@ interface DDNSCardProps {
     mutate: KeyedMutator<ModelDDNSProfile[]>
 }
 
-const ddnsFormSchema = z.object({
+const providerSchema = z.object({
     max_retries: z.coerce.number().int().min(1),
     enable_ipv4: asOptionalField(z.boolean()),
     enable_ipv6: asOptionalField(z.boolean()),
@@ -60,6 +60,9 @@ const ddnsFormSchema = z.object({
     domains_raw: z.string(),
     access_id: asOptionalField(z.string()),
     access_secret: asOptionalField(z.string()),
+})
+
+const ddnsFormSchema = providerSchema.extend({
     webhook_url: asOptionalField(z.string().url()),
     webhook_method: asOptionalField(z.coerce.number().int().min(1).max(255)),
     webhook_request_type: asOptionalField(z.coerce.number().int().min(1).max(255)),
@@ -72,8 +75,10 @@ type DDNSFormData = z.output<typeof ddnsFormSchema>
 
 export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) => {
     const { t } = useTranslation()
-    const form = useForm<DDNSFormInput, unknown, DDNSFormData>({
-        resolver: zodResolver(ddnsFormSchema),
+    const { form, open, onOpenChange } = useFormDialog<DDNSFormInput, DDNSFormData>(!!data, {
+        resolver: (values, context, options) => zodResolver(
+            values.provider === "webhook" ? ddnsFormSchema : providerSchema,
+        )(values, context, options),
         defaultValues: data
             ? {
                   max_retries: data.max_retries ?? 3,
@@ -107,35 +112,38 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                   webhook_request_body: "",
                   webhook_headers: "",
               },
-        resetOptions: {
-            keepDefaultValues: false,
-        },
     })
 
-    const [open, setOpen] = useState(false)
-
-    const onSubmit = async (values: DDNSFormData) => {
+    const { submitting, runSubmit } = useSubmitLock()
+    const onSubmit = runSubmit(async (values: DDNSFormData) => {
         try {
             values.domains = conv.strToArr(values.domains_raw)
             if (data?.id) {
-                await updateDDNSProfile(data.id, values)
+                await updateDDNSProfile(data.id, {
+                    webhook_url: data.webhook_url,
+                    webhook_method: data.webhook_method,
+                    webhook_request_type: data.webhook_request_type,
+                    webhook_headers: data.webhook_headers,
+                    webhook_request_body: data.webhook_request_body,
+                    ...values,
+                })
             } else {
                 await createDDNSProfile(values)
             }
         } catch (e) {
             console.error(e)
             toast(t("Error"), {
-                description: t("Results.UnExpectedError"),
+                description: e instanceof Error && e.message ? e.message : t("Results.UnExpectedError"),
             })
             return
         }
-        setOpen(false)
+        onOpenChange(false)
         await mutate()
         form.reset()
-    }
+    })
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {data ? <IconButton variant="outline" icon="edit" /> : <IconButton icon="plus" />}
             </DialogTrigger>
@@ -173,7 +181,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Select service type" />
+                                                        <SelectValue placeholder={t("Provider")} />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -223,7 +231,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         <FormItem>
                                             <FormLabel>{t("Credential")} 2</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Token Secret" {...field} />
+                                                <Input type="password" autoComplete="off" placeholder="Token Secret" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -250,6 +258,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         )
                                     }}
                                 />
+                                {form.watch("provider") === "webhook" && (<>
                                 <FormField
                                     control={form.control}
                                     name="webhook_url"
@@ -278,7 +287,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Webhook Request Method" />
+                                                        <SelectValue placeholder={t("RequestMethod")} />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -305,7 +314,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Webhook Request Type" />
+                                                        <SelectValue placeholder={t("RequestType")} />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -356,6 +365,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                         </FormItem>
                                     )}
                                 />
+                                </>)}
                                 <FormField
                                     control={form.control}
                                     name="enable_ipv4"
@@ -402,7 +412,7 @@ export const DDNSCard: React.FC<DDNSCardProps> = ({ data, providers, mutate }) =
                                             {t("Close")}
                                         </Button>
                                     </DialogClose>
-                                    <Button type="submit" className="my-2">
+                                    <Button disabled={submitting} type="submit" className="my-2">
                                         {t("Confirm")}
                                     </Button>
                                 </DialogFooter>
