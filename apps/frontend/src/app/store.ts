@@ -84,7 +84,11 @@ const LIVE_CAPACITY = 450 // 15 minutes at a 2 s cadence
 const live = new Map<string, HistoryPoint[]>()
 
 const counters = new Map<string, Pick<Snapshot, 'at' | 'totalUp' | 'totalDown'>[]>()
-export const getCounters = (id: string) => counters.get(id) ?? []
+export function getCounters(id: string) {
+  const recent = getLive(id).flatMap(p => p.reportedAt !== undefined && p.totalUp !== undefined && p.totalDown !== undefined
+    ? [{ at: p.reportedAt, totalUp: p.totalUp, totalDown: p.totalDown }] : [])
+  return [...(counters.get(id) ?? []), ...recent]
+}
 
 export const getLive = (id: string) => live.get(id) ?? []
 
@@ -116,7 +120,7 @@ function pushLive(snapshots: Record<string, Snapshot>) {
   const receivedAt = Date.now()
   for (const [id, s] of Object.entries(snapshots)) {
     if (!s.online) continue
-    const samples = getCounters(id)
+    const samples = counters.get(id) ?? []
     recordCounters(samples, { at: s.at, totalUp: s.totalUp, totalDown: s.totalDown }, new Date(receivedAt).setHours(0, 0, 0, 0))
     counters.set(id, samples)
     const buf = live.get(id) ?? []
@@ -128,6 +132,8 @@ function pushLive(snapshots: Record<string, Snapshot>) {
     buf.push({
       at,
       reportedAt: s.at,
+      totalUp: s.totalUp,
+      totalDown: s.totalDown,
       cpu: s.cpu,
       memUsed: s.memUsed,
       swapUsed: s.swapUsed,

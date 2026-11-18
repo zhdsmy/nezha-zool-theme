@@ -183,3 +183,17 @@ it('waits for site configuration before requesting exchange rates for active dis
   expect(needsExchangeRates({ phase: 'ready', settings: { ...settings, showCost: false, showBilling: false } })).toBe(false)
   expect(needsExchangeRates({ phase: 'ready', settings: { ...settings, showCost: false, showBilling: true } })).toBe(true)
 })
+
+it('keeps recent intermediate reports when history later reveals an intervening reset', async () => {
+  const { start, getCounters } = await import('../src/app/store')
+  const { summariseDay } = await import('../src/core/summary')
+  vi.useFakeTimers()
+  const midnight = +new Date(2026, 0, 1)
+  await start()
+  for (const [offset, totalUp] of [[1, 100], [2, 115], [4, 140]]) {
+    vi.setSystemTime(midnight + offset)
+    fake.listeners.forEach(l => l({ snapshots: { delayed: { ...snap, at: midnight + offset, totalUp } } }))
+  }
+  const history = [{ ...snap, at: midnight + 1, totalUp: 100 }, { ...snap, at: midnight + 3, totalUp: 5 }]
+  expect(summariseDay(history, getCounters('delayed'), midnight).todayUp).toBe(155)
+})
