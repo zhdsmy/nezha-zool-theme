@@ -6,6 +6,7 @@
 - Translate pagination controls and keep record totals on one line on narrow screens.
 - Apply the saved or system theme before the dashboard’s first paint.
 - Show localized field names in the agent configuration dialog.
+- Keep keyboard-focused fields visible above sticky dialog actions in short viewports.
 
 ## [0.1.0]
 
