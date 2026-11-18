@@ -60,7 +60,10 @@ async function processMessage(event: MessageEvent) {
                     accessHandle = undefined
 
                     const fileBlob = await draftHandle.getFile()
-                    const blob = new Blob([fileBlob], { type: "application/octet-stream" })
+                    // Drain the file into a browser-managed Blob before the next write or cleanup.
+                    const blob = await new Response(fileBlob.stream(), {
+                        headers: { "Content-Type": "application/octet-stream" },
+                    }).blob()
 
                     postMessage({ type: 2, blob: blob, fileName: fileName })
                 }
