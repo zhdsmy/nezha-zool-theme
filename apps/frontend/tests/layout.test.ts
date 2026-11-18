@@ -44,3 +44,8 @@ it('lets long public notes and the search field fit a narrow viewport', () => {
   expect(node).toMatch(/node-note[^"]*wrap-anywhere/)
   expect(search).toMatch(/<input\b[^>]*(?:[\s\S]*?)className="[^"]*min-w-0[^"]*flex-1/)
 })
+
+it('reserves the filtered empty message for a nonempty fleet', () => {
+  const page = readFileSync(new URL('../src/pages/HomePage.tsx', import.meta.url), 'utf8')
+  expect(page).toContain("t(nodes.length ? 'toolbar.empty' : 'status.noNodes')")
+})

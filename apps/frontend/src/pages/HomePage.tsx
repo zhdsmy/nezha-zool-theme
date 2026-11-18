@@ -409,12 +409,6 @@ export function HomePage() {
               connection that was working and dropped. */}
           <StatusDot online={connection === 'open' && fed} pending={!fed} />
           {t(connectionLabel({ connection, fed }))}
-          {nodes.length === 0 && (
-            <>
-              <span className="text-faint">/</span>
-              <span className="normal-case tracking-normal">{t('status.noNodes')}</span>
-            </>
-          )}
         </p>
         {/* The one sentence the page owes a visitor, in the colour of its answer. */}
         {nodes.length > 0 && fed && (
@@ -747,7 +741,7 @@ export function HomePage() {
           last known values, not a fleet that went offline. */}
       <section className="mt-2 md:mt-4" data-stale={fed && connection !== 'open' ? '' : undefined}>
         {shown === 0 ? (
-          <p className="rounded-[20px] border border-dashed border-line py-16 text-center text-[14px] text-muted">{t('toolbar.empty')}</p>
+          <p className="rounded-[20px] border border-dashed border-line py-16 text-center text-[14px] text-muted">{t(nodes.length ? 'toolbar.empty' : 'status.noNodes')}</p>
         ) : (
           <>
             {view !== 'cards' && <StripHead />}
