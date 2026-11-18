@@ -93,3 +93,10 @@ describe('Nezha OAuth login', () => {
     expect(html).not.toContain('type="password"')
   })
 })
+
+it('rejects failed settings so the load-error screen can retry', async () => {
+  vi.stubGlobal('window', { ZoolConfig: {} })
+  respond({ success: false })
+  await expect(nezha.loadSite()).rejects.toThrow('Nezha settings unavailable')
+  await expect(loadSite(['GitHub'])).resolves.toMatchObject({ oauth: true })
+})

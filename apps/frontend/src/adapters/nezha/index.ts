@@ -466,10 +466,11 @@ export const nezha: MonitorAdapter = {
 
   async loadSite(): Promise<SiteInfo> {
     const [res, loggedIn] = await Promise.all([
-      request<Common<NezhaSetting>>('/api/v1/setting').catch(() => null),
+      request<Common<NezhaSetting>>('/api/v1/setting'),
       request<Common<unknown>>('/api/v1/profile').then((r) => r.success, () => false),
     ])
-    const cfg = res?.data?.config ?? {}
+    if (!res?.success || !res.data) throw new Error('Nezha settings unavailable')
+    const cfg = res.data.config ?? {}
     const oauthProviders = (cfg.oauth2_providers ?? []).filter((provider) => typeof provider === 'string' && provider.trim())
     return {
       name: (cfg.site_name ?? '').trim() || 'Nezha',
